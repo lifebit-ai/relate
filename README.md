@@ -1,12 +1,4 @@
-# `lifebit-ai/relate`
-
-**Genomics Englands' Ancestry and Relatedness inference workflow**.
-
-[![Build Status](https://travis-ci.com/lifebit-ai/relate.svg?branch=master)](https://travis-ci.com/lifebit-ai/relate)
-[![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A50.32.0-brightgreen.svg)](https://www.nextflow.io/)
-
-[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg)](http://bioconda.github.io/)
-[![Docker](https://img.shields.io/docker/automated/nfcore/relate.svg)](https://hub.docker.com/r/nfcore/relate)
+**Genomics England's workflow for variant quality control and annotation**.
 
 ## Introduction
 
@@ -35,22 +27,13 @@ See [usage docs](docs/usage.md) for all of the available options when running th
 
 ## Documentation
 
-The lifebit-ai/relate pipeline comes with documentation about the pipeline, found in the `docs/` directory:
-
-1. [Installation](https://nf-co.re/usage/installation)
-2. Pipeline configuration
-    * [Local installation](https://nf-co.re/usage/local_installation)
-    * [Adding your own system config](https://nf-co.re/usage/adding_own_config)
-    * [Reference genomes](https://nf-co.re/usage/reference_genomes)
-3. [Running the pipeline](docs/usage.md)
-4. [Output and how to interpret the results](docs/output.md)
-5. [Troubleshooting](https://nf-co.re/usage/troubleshooting)
-
-<!-- TODO nf-core: Add a brief overview of what the pipeline does and how it works -->
+The lifebit-ai/relate pipeline comes with documentation about the pipeline which you can find in the [`docs/` directory](docs).
 
 ## Credits
 
-lifebit-ai/relate was originally written by Daniel Rhodes, Christina Chatzipantsiou and the Bioinformatics teams of Lifebit and Genomics Englands.
+The code for the `relate` workflow was originally written by Daniel Rhodes and the Genomics England Bioinformatics team.
+
+The Nextflow implementation of the pipeline was developed by Christina Chatzipantsiou for use by Genomics England and collaborators.
 
 ## Contributions and Support
 
