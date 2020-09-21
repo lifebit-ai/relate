@@ -1,4 +1,4 @@
-**Genomics England's workflow for variant quality control and annotation**.
+**Genomics Englands' Ancestry and Relatedness inference workflow.**.
 
 ## Introduction
 
