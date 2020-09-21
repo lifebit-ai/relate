@@ -1,13 +1,22 @@
 # You can use this file to create a conda environment for this pipeline:
 #   conda env create -f environment.yml
-name: nf-core-relate-1.0dev
+name: relate-1.0dev
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  # TODO nf-core: Add required software dependencies here
+  - conda-forge::python=3.7.3
+  - conda-forge::markdown=3.1.1
+  - conda-forge::pymdown-extensions=6.0
+  - conda-forge::pygments=2.5.2
   - bioconda::fastqc=0.11.8
   - bioconda::multiqc=1.7
-  - conda-forge::r-markdown=1.1
-  - conda-forge::r-base=3.6.1
+  - r-base=3.6.0
+  - vcftools=0.1.15
+  - bcftools=1.10.2
+  - plink=1.90b6.12
+  - conda-forge:r-data.table=1.12.8
+  - conda-forge:r-magrittr=1.5
+  - conda-forge:r-ggplot2=3.3.0
+  - conda-forge:r-dplyr=0.8.5
