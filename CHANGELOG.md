@@ -1,4 +1,4 @@
-# nf-core/relate: Changelog
+# lifebit-ai/relate: Changelog
 
 ## v1.0dev - [date]
 Initial release of nf-core/relate, created with the [nf-core](http://nf-co.re/) template.

@@ -1,6 +1,6 @@
 FROM nfcore/base:1.7
 LABEL authors="Daniel Rhodes, Christina Chatzipantsiou" \
-      description="Docker image containing all requirements for nf-core/relate pipeline"
+      description="Docker image containing all requirements for lifebit-ai/relate pipeline"
 
 COPY environment.yml /
 RUN conda env create -f /environment.yml && conda clean -a

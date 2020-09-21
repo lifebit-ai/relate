@@ -1,6 +1,6 @@
-# nf-core/relate: Documentation
+# lifebit-ai/relate: Documentation
 
-The nf-core/relate documentation is split into the following files:
+The lifebit-ai/relate documentation is split into the following files:
 
 1. [Installation](https://nf-co.re/usage/installation)
 2. Pipeline configuration

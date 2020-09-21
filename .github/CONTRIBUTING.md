@@ -1,24 +1,22 @@
-# nf-core/relate: Contributing Guidelines
+# lifebit-ai/relate: Contributing Guidelines
 
-Hi there! Many thanks for taking an interest in improving nf-core/relate.
+Hi there! Many thanks for taking an interest in improving lifebit-ai/relate.
 
-We try to manage the required tasks for nf-core/relate using GitHub issues, you probably came to this page when creating one. Please use the pre-filled template to save time.
+We try to manage the required tasks for lifebit-ai/relate using GitHub issues, you probably came to this page when creating one. Please use the pre-filled template to save time.
 
 However, don't be put off by this template - other more general issues and suggestions are welcome! Contributions to the code are even more welcome ;)
 
-> If you need help using or modifying nf-core/relate then the best place to ask is on the pipeline channel on [Slack](https://nf-co.re/join/slack/).
-
-
+> If you need help using or modifying lifebit-ai/relate then feel free to open a GitHub issue and add the label `help wanted`.
 
 ## Contribution workflow
-If you'd like to write some code for nf-core/relate, the standard workflow
+If you'd like to write some code for lifebit-ai/relate, the standard workflow
 is as follows:
 
 1. Check that there isn't already an issue about your idea in the
-   [nf-core/relate issues](https://github.com/nf-core/relate/issues) to avoid
+   [lifebit-ai/relate issues](https://github.com/lifebit-ai/relate/issues) to avoid
    duplicating work.
     * If there isn't one already, please create one so that others know you're working on this
-2. Fork the [nf-core/relate repository](https://github.com/nf-core/relate) to your GitHub account
+2. Fork the [lifebit-ai/relate repository](https://github.com/lifebit-ai/relate) to your GitHub account
 3. Make the necessary changes / additions within your forked repository
 4. Submit a Pull Request against the `dev` branch and wait for the code to be reviewed and merged.
 
@@ -44,4 +42,4 @@ If there are any failures then the automated tests fail.
 These tests are run both with the latest available version of Nextflow and also the minimum required version that is stated in the pipeline code.
 
 ## Getting help
-For further information/help, please consult the [nf-core/relate documentation](https://github.com/nf-core/relate#documentation) and don't hesitate to get in touch on the [nf-core/relate pipeline channel](https://nfcore.slack.com/channels/nf-core/relate) on [Slack](https://nf-co.re/join/slack/).
+For further information/help, please consult the [lifebit-ai/relate documentation](https://github.com/lifebit-ai/relate#documentation) and don't hesitate to get in touch on the [lifebit-ai/relate pipeline channel](https://nfcore.slack.com/channels/lifebit-ai/relate) on [Slack](https://nf-co.re/join/slack/).
