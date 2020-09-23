@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 /*
 ========================================================================================
-                         siteqc
+                         lifebit-ai/relate
 ========================================================================================
-siteqc Analysis Pipeline.
+lifebit-ai/relate Analysis Pipeline.
 #### Homepage / Documentation
 ----------------------------------------------------------------------------------------
 */
@@ -17,7 +17,7 @@ def helpMessage() {
 
     The typical command for running the pipeline is as follows:
 
-    nextflow run  lifebit-ai/siteqc --input .. -profile docker
+    nextflow run  lifebit-ai/relate --input .. -profile docker
 
     Mandatory arguments:
       --input [file]                  Path to input sample sheet csv of bcf files.
