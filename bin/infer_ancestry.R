@@ -1,22 +1,16 @@
-#!/usr/bin/env Rscript
-
 #Produce RF predicting the pops based on projected SNPs on 1000kgp3
 
 # Setup -------------------------------------------------------------------
 lapply(c("data.table", "tidyverse", "magrittr"), library, character.only = T)
 args <- commandArgs(trailingOnly = T)
+
 argsList <- c('kgp3_sample_table',
               'super_pop_codes',
               'unrel_30k',
               'eigenvec',
               'projections',
               'outdir')
-allArgs <- list()
-allArgs <- lapply(1:length(argsList),
-                  function(i){
-                    allArgs <- as.character(args[i])
-                  })
-names(allArgs) <- argsList
+names(args) <= argsList
 # Functions ---------------------------------------------------------------
 data_setup <- function(mafList, phen, k1g){
   #Set up sample names
@@ -134,17 +128,17 @@ assign_pops <- function(mafList, phen, super_pop){
 # Start -------------------------------------------------------------------
 
 #Read population labels
-indiv_pop<-fread(allArgs$kgp3_sample_table) %>% as_tibble()
-super_pop<-fread(allArgs$super_pop_codes) %>% as_tibble()
+indiv_pop<-fread(args$kgp3_sample_table)
+super_pop<-fread(args$super_pop_codes)
 phen<-merge(indiv_pop,super_pop,by="Population")
 
 #Read plate_keys of 1KGP3 unrelated individuals
-k1g<-fread(allArgs$unrel_30k)[,1]
+k1g<-fread(args$unrel_30k)[,1]
 
 #Read 1KGP3 PCs and their projection to aggV2 with 200k SNPs
 maf1 <- list()
-maf1$pcsk1g<-fread(allArgs$eigenvec)[,-2]
-maf1$pcsgel<-fread(allArgs$projections)[,-c(2,23)]
+maf1$pcsk1g<-fread(args$eigenvec)[,-2]
+maf1$pcsgel<-fread(args$projections)[,-c(2,23)]
 
 #Prep data
 maf1 %<>% data_setup(phen = phen, k1g = k1g)
@@ -161,8 +155,6 @@ set.seed(123)
 maf1$pop_super <- grid_search_parameters(train_dat = maf1$train_data, pop = "Super_Population")
 maf1$pop_sub <- grid_search_parameters(train_dat = maf1$train_data , pop = 'Population')
 
-
-#STOP
 ##
 # Manually inspect the error rates to decide the parameters to use
 # Remember the method used is pretty short-hand so interpretation may be required
@@ -188,10 +180,10 @@ maf1$ancestries <- assign_pops(maf1, phen, super_pop)
 
 
 #Write entire object to file
-maf1 %>% saveRDS('results.RDS' )
+maf1 %>% saveRDS(file = file.path(args$outdir, 'results.RDS' ))
 
 #Output just the predictions
-maf1$ancestries %>% fwrite('predicted_ancestries.tsv')
+maf1$ancestries %>% fwrite(file.path(args$outdir,'predicted_ancestries.tsv', sep = '\t'))
 
 
 
