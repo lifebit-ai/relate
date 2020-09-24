@@ -1,4 +1,6 @@
-# lifebit-ai/relate: Documentation
+# lifebit-ai/relate: 
+
+## Documentation
 
 The lifebit-ai/relate documentation is split into the following files:
 
@@ -10,3 +12,8 @@ The lifebit-ai/relate documentation is split into the following files:
 3. [Running the pipeline](usage.md)
 4. [Output and how to interpret the results](output.md)
 5. [Troubleshooting](https://nf-co.re/usage/troubleshooting)
+
+
+## Workflow visual overview (DAG)
+
+![dag](https://github.com/lifebit-ai/relate/raw/salvador-add-ancestry-mvp/assets/relate_dag.png)

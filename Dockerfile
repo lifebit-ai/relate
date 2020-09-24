@@ -25,6 +25,8 @@ RUN R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/BH/BH
 RUN R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/dplyr/dplyr_0.8.5.tar.gz', repos=NULL, type='source')"
 RUN R -e "install.packages('https://cran.r-project.org/src/contrib/Archive/data.table/data.table_1.12.8.tar.gz', repos=NULL, type='source')"
 RUN R -e "install.packages('https://cran.r-project.org/src/contrib/magrittr_1.5.tar.gz', repos=NULL, type='source')"
+RUN R -e "withr::with_makevars(c(PKG_LIBS = '-liconv'), install.packages('tidyverse',repos='http://cran.us.r-project.org'), assignment = '+=')"
+RUN R -e "install.packages('randomForest',repos='http://cran.us.r-project.org')"
 
 # Dump the details of the installed packages to a file for posterity
 RUN conda env export --name nf-core-siteqc-1.0dev > nf-core-siteqc-1.0dev.yml

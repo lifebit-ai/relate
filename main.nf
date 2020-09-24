@@ -33,11 +33,11 @@ def helpMessage() {
 
 
     Options:
-      --query_format_start [str]      Bcftools query format used for creating the skeleton of the sites.
-      --query_format_miss1 [str]      Bcftools query format used for the missingeness 1 step.
+      
+      
     
     References                        If not specified in the configuration file or you wish to overwrite any of the references
-      --fasta [file]                  Path to fasta reference
+      
 
     Other options:
       --outdir [file]                 The output directory where the results will be saved
@@ -93,16 +93,21 @@ query_format_miss1 = params.query_format_miss1
   Channel.fromPath(params.inputDir+'/*.txt')
                         .ifEmpty { exit 1, "Input dir for annotation txt files not found at ${params.inputDir}. Is the dir path correct?" }
                         .filter{txt -> txt =~/chr\d+/}
-                        .map { txt -> ['chr'+ txt.simpleName.split('_chr').last() , txt] }.view()
+                        .map { txt -> ['chr'+ txt.simpleName.split('_chr').last() , txt] }
                         .set { ch_bcftools_site_metrics_subcols }
 
   Channel.fromPath(params.inputFinalPlatekeys)
                         .ifEmpty { exit 1, "Input file with samples and platekeys data not found at ${params.inputFinalPlatekeys}. Is the file path correct?" }
                         .set { ch_inputFinalPlatekeys }
+  Channel.fromPath(params.inputUNRELATED_1KGP3).set { ch_inputUNRELATED_1KGP3 }
+  Channel.fromPath(params.input1KGP3).set { ch_input1KGP3 }
+  Channel.fromPath(params.inputSuper_pop_codes).set { ch_inputSuper_pop_codes }
+  Channel.fromPath(params.input05both1K100K_eigenvec).set { ch_input05both1K100K_eigenvec }
+  Channel.fromPath(params.inputGELprojection_proj_eigenvec).set { ch_GELprojection_proj_eigenvec }
 
-  Channel.fromPath(params.inputMichiganLDfile)
-                        .ifEmpty { exit 1, "Input file with Michigan LD data not found at ${params.inputMichiganLDfile}. Is the file path correct?" }
-                        .set { ch_inputMichiganLDfile }
+  
+  
+  
   Channel.fromPath(params.inputPCsancestryrelated)
                         .ifEmpty { exit 1, "Input file with Michigan LD data not found at ${params.inputPCsancestryrelated}. Is the file path correct?" }
                         .set { ch_inputPCsancestryrelated }
@@ -124,7 +129,7 @@ if (params.input.endsWith(".csv")) {
                         .ifEmpty { exit 1, "Input .csv list of input tissues not found at ${params.input}. Is the file path correct?" }
                         .splitCsv(sep: ',',  skip: 1)
                         .map { bcf, index -> ['chr'+file(bcf).simpleName.split('_chr').last() , file(bcf), file(index)] }
-                        .filter{bcf -> bcf =~/chr\d+/}.view()
+                        .filter{bcf -> bcf =~/chr\d+/}
                         .set { ch_bcfs }
 
 }
@@ -213,7 +218,7 @@ process further_filtering {
 
     input:
     set val(region), file(bcf_filtered) from ch_regions_filtered
-    file (michiganld_exclude_regions_file) from ch_inputMichiganLDfile
+    
     output:
     set val(region), file("MichiganLD_regionsFiltered_${region}.bcf"), file("MAF_filtered_1kp3intersect_${region}.txt") into ch_further_filtering
 
@@ -388,6 +393,10 @@ process merge_autosomes {
     rm mergelist.txt
     """
 }
+
+/* STEP_25
+ *Purpose: produce a first pass HWE filter. 
+ */
 process hwe_pruning_30k_snps {
     publishDir "${params.outdir}/hwe_pruning_30k_snps/", mode: params.publish_dir_mode
     input:
@@ -434,6 +443,9 @@ process hwe_pruning_30k_snps {
     ' 
     """
 }
+
+/* STEP_26
+ */
 process king_coefficients{
        publishDir "${params.outdir}/king_coefficients/", mode: params.publish_dir_mode 
        container = "lifebitai/plink2"
@@ -455,7 +467,7 @@ process king_coefficients{
     --make-king triangle bin \
     --out autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1e_5 \
     --thread-num 30
-    
+    echo "done1"
 
     plink2 --bfile autosomes_LD_pruned_1kgp3Intersect \
        --king-cutoff autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1e_5 0.0442 && \
@@ -466,15 +478,44 @@ process king_coefficients{
     --make-bed \
     --keep autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.in.id \
     --out autosomes_LD_pruned_1kgp3Intersect_unrelated
-    
+    echo "done2"
     plink2 --bfile autosomes_LD_pruned_1kgp3Intersect \
     --make-bed \
     --remove autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.in.id \
     --out autosomes_LD_pruned_1kgp3Intersect_related
-    
+    echo "done3"
     """
 }
+/* STEP_27
+ */
+process infer_ancestry{
+    publishDir "${params.outdir}/infer_ancestry/", mode: params.publish_dir_mode 
+    echo true
+    input:
+    file (kgp3_sample_table) from ch_input1KGP3
+    file (super_pop_codes) from ch_inputSuper_pop_codes
+    file (kgp3_unrel) from ch_inputUNRELATED_1KGP3
+    file "1KGP3_intersectGEL_200Kset_perpopHWE1e-6_unrel_maf0.05both1K100K.eigenvec" from ch_input05both1K100K_eigenvec
+    file "1KGP3_intersectGEL_200Kset_perpopHWE1e-6_unrel_maf0.05both1K100K_GELprojection.proj.eigenvec" from ch_GELprojection_proj_eigenvec
 
+
+    output:
+    file "predicted_ancestries.tsv" into ch_infer_ancestry
+    file "results.RDS" into ch_infer_ancestry_2
+    
+
+    script:
+    """
+    mkdir Ancestries
+    infer_ancestry.R  \
+    ${kgp3_sample_table} \
+    ${super_pop_codes} \
+    ${kgp3_unrel} \
+    "1KGP3_intersectGEL_200Kset_perpopHWE1e-6_unrel_maf0.05both1K100K.eigenvec" \
+    "1KGP3_intersectGEL_200Kset_perpopHWE1e-6_unrel_maf0.05both1K100K_GELprojection.proj.eigenvec" \
+    "Ancestries"
+    """
+}
 
 def nfcoreHeader() {
     // Log colors ANSI codes
