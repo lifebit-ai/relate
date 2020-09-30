@@ -20,3 +20,5 @@ dependencies:
   - conda-forge:r-magrittr=1.5
   - conda-forge:r-ggplot2=3.3.0
   - conda-forge:r-dplyr=0.8.5
+  - biobuilds::gcta=1.26.0
+  
