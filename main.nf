@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 /*
 ========================================================================================
-                         lifebit-ai/relate
+                         siteqc
 ========================================================================================
-lifebit-ai/relate Analysis Pipeline.
+siteqc Analysis Pipeline.
 #### Homepage / Documentation
 ----------------------------------------------------------------------------------------
 */
@@ -17,7 +17,7 @@ def helpMessage() {
 
     The typical command for running the pipeline is as follows:
 
-    nextflow run  lifebit-ai/relate --input .. -profile docker
+    nextflow run  lifebit-ai/siteqc --input .. -profile docker
 
     Mandatory arguments:
       --input [file]                  Path to input sample sheet csv of bcf files.
@@ -33,11 +33,11 @@ def helpMessage() {
 
 
     Options:
-      
-      
+      --query_format_start [str]      Bcftools query format used for creating the skeleton of the sites.
+      --query_format_miss1 [str]      Bcftools query format used for the missingeness 1 step.
     
     References                        If not specified in the configuration file or you wish to overwrite any of the references
-      
+      --fasta [file]                  Path to fasta reference
 
     Other options:
       --outdir [file]                 The output directory where the results will be saved
@@ -105,9 +105,9 @@ query_format_miss1 = params.query_format_miss1
   Channel.fromPath(params.input05both1K100K_eigenvec).set { ch_input05both1K100K_eigenvec }
   Channel.fromPath(params.inputGELprojection_proj_eigenvec).set { ch_GELprojection_proj_eigenvec }
 
-  
-  
-  
+  Channel.fromPath(params.inputMichiganLDfile)
+                        .ifEmpty { exit 1, "Input file with Michigan LD data not found at ${params.inputMichiganLDfile}. Is the file path correct?" }
+                        .set { ch_inputMichiganLDfile }
   Channel.fromPath(params.inputPCsancestryrelated)
                         .ifEmpty { exit 1, "Input file with Michigan LD data not found at ${params.inputPCsancestryrelated}. Is the file path correct?" }
                         .set { ch_inputPCsancestryrelated }
@@ -218,7 +218,7 @@ process further_filtering {
 
     input:
     set val(region), file(bcf_filtered) from ch_regions_filtered
-    
+    file (michiganld_exclude_regions_file) from ch_inputMichiganLDfile
     output:
     set val(region), file("MichiganLD_regionsFiltered_${region}.bcf"), file("MAF_filtered_1kp3intersect_${region}.txt") into ch_further_filtering
 
@@ -456,7 +456,7 @@ process king_coefficients{
        file "hwe1e-5_superpops_195ksnps" from hwe_pruning_30k_snps
 
        output:
-       set file("autosomes_LD_pruned_1kgp3Intersect_unrelated*"), file("autosomes_LD_pruned_1kgp3Intersect_related*") into king_coefficients
+       set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bed"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bim"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.fam"), file("autosomes_LD_pruned_1kgp3Intersect_related.bed"),file("autosomes_LD_pruned_1kgp3Intersect_related.bim"), file("autosomes_LD_pruned_1kgp3Intersect_related.fam") into king_coefficients
     
 
        script:
@@ -484,6 +484,26 @@ process king_coefficients{
     --remove autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.in.id \
     --out autosomes_LD_pruned_1kgp3Intersect_related
     echo "done3"
+    """
+}
+/* STEP_27a
+ */
+process gcta{
+    publishDir "${params.outdir}/gcta/", mode: params.publish_dir_mode 
+    
+    input:
+    set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bed"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bim"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.fam"), file("autosomes_LD_pruned_1kgp3Intersect_related.bed"),file("autosomes_LD_pruned_1kgp3Intersect_related.bim"), file("autosomes_LD_pruned_1kgp3Intersect_related.fam") from king_coefficients
+
+    output:
+    set file("autosomes_LD_pruned_1kgp3Intersect_unrelated*") , val(1) into ch_gcta
+    
+
+    script:
+    """
+    gcta64 --bfile "autosomes_LD_pruned_1kgp3Intersect_unrelated" --make-grm-bin --thread-num 30 --out "autosomes_LD_pruned_1kgp3Intersect_unrelated"
+    gcta64 --grm "autosomes_LD_pruned_1kgp3Intersect_unrelated" --pca 20  --out "autosomes_LD_pruned_1kgp3Intersect_unrelated" --thread-num 30
+    gcta64 --bfile "autosomes_LD_pruned_1kgp3Intersect_unrelated" --pc-loading "autosomes_LD_pruned_1kgp3Intersect_unrelated" --out "autosomes_LD_pruned_1kgp3Intersect_unrelated" --thread-num 30
+    
     """
 }
 /* STEP_27
