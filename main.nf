@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 /*
 ========================================================================================
-                         siteqc
+                         lifebit-ai/relate
 ========================================================================================
-siteqc Analysis Pipeline.
+lifebit-ai/relate Analysis Pipeline.
 #### Homepage / Documentation
 ----------------------------------------------------------------------------------------
 */
@@ -17,7 +17,7 @@ def helpMessage() {
 
     The typical command for running the pipeline is as follows:
 
-    nextflow run  lifebit-ai/siteqc --input .. -profile docker
+    nextflow run  lifebit-ai/relate --input .. -profile docker
 
     Mandatory arguments:
       --input [file]                  Path to input sample sheet csv of bcf files.
@@ -31,13 +31,13 @@ def helpMessage() {
       -profile [str]                  Configuration profile to use. Can use multiple (comma separated)
                                       Available: conda, docker, singularity, test, awsbatch, <institute> and more
 
-
+                                      
     Options:
-      --query_format_start [str]      Bcftools query format used for creating the skeleton of the sites.
-      --query_format_miss1 [str]      Bcftools query format used for the missingeness 1 step.
+      
+      
     
     References                        If not specified in the configuration file or you wish to overwrite any of the references
-      --fasta [file]                  Path to fasta reference
+      
 
     Other options:
       --outdir [file]                 The output directory where the results will be saved
@@ -105,9 +105,9 @@ query_format_miss1 = params.query_format_miss1
   Channel.fromPath(params.input05both1K100K_eigenvec).set { ch_input05both1K100K_eigenvec }
   Channel.fromPath(params.inputGELprojection_proj_eigenvec).set { ch_GELprojection_proj_eigenvec }
 
-  Channel.fromPath(params.inputMichiganLDfile)
-                        .ifEmpty { exit 1, "Input file with Michigan LD data not found at ${params.inputMichiganLDfile}. Is the file path correct?" }
-                        .set { ch_inputMichiganLDfile }
+  
+  
+  
   Channel.fromPath(params.inputPCsancestryrelated)
                         .ifEmpty { exit 1, "Input file with Michigan LD data not found at ${params.inputPCsancestryrelated}. Is the file path correct?" }
                         .set { ch_inputPCsancestryrelated }
@@ -218,7 +218,7 @@ process further_filtering {
 
     input:
     set val(region), file(bcf_filtered) from ch_regions_filtered
-    file (michiganld_exclude_regions_file) from ch_inputMichiganLDfile
+    
     output:
     set val(region), file("MichiganLD_regionsFiltered_${region}.bcf"), file("MAF_filtered_1kp3intersect_${region}.txt") into ch_further_filtering
 
