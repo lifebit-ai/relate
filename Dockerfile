@@ -10,7 +10,7 @@ COPY environment.yml /
 RUN conda env create --quiet -f /environment.yml && conda clean -a
 
 # Add conda installation dir to PATH (instead of doing 'conda activate')
-ENV PATH /opt/conda/envs/siteqc-1.0dev/bin:$PATH
+ENV PATH /opt/conda/envs/relate-1.0dev/bin:$PATH
 
 # Install stringi R package and the ones that depend on it.
 # (Issue with stringi package from conda that it depends on libicu64 that
@@ -29,8 +29,7 @@ RUN R -e "withr::with_makevars(c(PKG_LIBS = '-liconv'), install.packages('tidyve
 RUN R -e "install.packages('randomForest',repos='http://cran.us.r-project.org')"
 
 # Dump the details of the installed packages to a file for posterity
-RUN conda env export --name nf-core-siteqc-1.0dev > nf-core-siteqc-1.0dev.yml
-
+RUN conda env export --name nf-core-relate-1.0dev > nf-core-relate-1.0dev.yml
 # Instruct R processes to use these empty files instead of clashing with a local version
 RUN touch .Rprofile
 RUN touch .Renviron
