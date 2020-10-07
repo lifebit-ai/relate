@@ -30,6 +30,16 @@ RUN R -e "install.packages('randomForest',repos='http://cran.us.r-project.org')"
 
 # Dump the details of the installed packages to a file for posterity
 RUN conda env export --name nf-core-relate-1.0dev > nf-core-relate-1.0dev.yml
+
+RUN mkdir /opt/bin
+COPY bin/* /opt/bin/
+
+RUN find /opt/bin/ -type f -iname "*.py" -exec chmod +x {} \; && \
+    find /opt/bin/ -type f -iname "*.R" -exec chmod +x {} \; && \
+    find /opt/bin/ -type f -iname "*.sh" -exec chmod +x {} \; && \
+    find /opt/bin/ -type f -iname "*.css" -exec chmod +x {} \; && \
+    find /opt/bin/ -type f -iname "*.Rmd" -exec chmod +x {} \;
+    
 # Instruct R processes to use these empty files instead of clashing with a local version
 RUN touch .Rprofile
 RUN touch .Renviron
@@ -40,3 +50,5 @@ RUN apt-get update && \
     apt-get install -y \
                    gawk \
                    tabix \
+
+ENV PATH="$PATH:/opt/bin/"
