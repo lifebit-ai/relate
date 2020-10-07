@@ -49,6 +49,6 @@ RUN touch .Renviron
 RUN apt-get update && \
     apt-get install -y \
                    gawk \
-                   tabix \
+                   tabix
 
 ENV PATH="$PATH:/opt/bin/"
