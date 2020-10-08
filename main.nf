@@ -42,6 +42,7 @@ def helpMessage() {
       --input05both1K100K_eigenvec    File required for the infer_ancestry process, its tab separated file with eigenvectors.
       --inputGELprojection_proj_eigenvec    File required for the infer_ancestry process, its tab separated file with eigenvectors and it has "NA" values in the last column.
       --inputAncestryAssignmentProbs  File required for hwe_pruning_30k_snps process containing tab separated values for probabilities of assignments for the 31 populations code for each platekey(sample)
+      --n_pca                          Number of Principal Components desired for gcta process
       
       
 
@@ -107,6 +108,8 @@ if (workflow.profile.contains('awsbatch')) {
 query_format_start = params.query_format_start
 query_format_miss1 = params.query_format_miss1
 params.awk_expr_create_final_king_vcf_1= 'NR==FNR{c[\$1\$2\$3\$4]++;next}; c[\$1\$2\$4\$5] > 0'
+params.n_pca=20
+n_pca=params.n_pca
 awk_expr_create_final_king_vcf_1 = params.awk_expr_create_final_king_vcf_1
 
 // Input list .csv file of tissues to analyse
@@ -333,7 +336,7 @@ process concat_king_vcf {
 
 process make_bed_all {
     publishDir "${params.outdir}/make_bed_all/", mode: params.publish_dir_mode
-    container = "lifebitai/plink2"
+
     input:
     set val(chr),file("chrom${chr}_merged_filtered.vcf.gz"),file("chrom${chr}_merged_filtered.vcf.gz.tbi") from ch_vcfs_per_chromosome
     file(michiganld_exclude_regions_file) from ch_inputMichiganLDfileExclude
@@ -471,7 +474,7 @@ process hwe_pruning_30k_snps {
  */
 process king_coefficients{
        publishDir "${params.outdir}/king_coefficients/", mode: params.publish_dir_mode 
-       container = "lifebitai/plink2"
+
        
 
        input:
@@ -524,7 +527,7 @@ process gcta{
     script:
     """
     gcta64 --bfile "autosomes_LD_pruned_1kgp3Intersect_unrelated" --make-grm-bin --thread-num 30 --out "autosomes_LD_pruned_1kgp3Intersect_unrelated"
-    gcta64 --grm "autosomes_LD_pruned_1kgp3Intersect_unrelated" --pca 20  --out "autosomes_LD_pruned_1kgp3Intersect_unrelated" --thread-num 30
+    gcta64 --grm "autosomes_LD_pruned_1kgp3Intersect_unrelated" --pca ${n_pca}  --out "autosomes_LD_pruned_1kgp3Intersect_unrelated" --thread-num 30
     gcta64 --bfile "autosomes_LD_pruned_1kgp3Intersect_unrelated" --pc-loading "autosomes_LD_pruned_1kgp3Intersect_unrelated" --out "autosomes_LD_pruned_1kgp3Intersect_unrelated" --thread-num 30
     awk 'BEGIN{OFS="    "}{print \$0, "NA"}' "autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec" > "autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec.PROJ.eigenvec"
     """
