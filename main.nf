@@ -20,7 +20,7 @@ def helpMessage() {
     nextflow run  lifebit-ai/relate --input .. -profile docker
 
     Mandatory arguments:
-      --input [file]                  Path to input sample sheet csv of bcf files.
+      --input [file]                  File with list of full paths to bcf files and their indexes. Bcf files can be compressed but in a readable for bcftools format.
                                       The name of the files must be consistent across files.
                                       see example:
                                       test_all_chunks_merged_norm_chr10_53607810_55447336.bcf.gz
@@ -31,7 +31,22 @@ def helpMessage() {
       -profile [str]                  Configuration profile to use. Can use multiple (comma separated)
                                       Available: conda, docker, singularity, test, awsbatch, <institute> and more
 
-                                      
+      --inputDir                      Input dir for annotation ".txt" files for each of the regions (or chunks ), comming from the metrics compoment and first aggregate annotation of SiteQC pipeline.
+      --inputMichiganLDfileExclude    File with regions to be filtered out for improving quality of sites selected.
+      --inputPCsancestryrelated       File with Principal Components information comming from reference resources of GEL for the inferred ancestries from the 30k dataset.
+      --inputFinalPlatekeys           File with a list of platekeys to be included in the analysis , required for "create_final_king_vcf" process.
+      --inputProbs200K                File with Ancestry assignments from GEL's reference resources.
+      --inputUNRELATED_1KGP3          File required for the infer_ancestry process , is a two column tab separated file with platekeys on each column.
+      --input1KGP3                    File required for the infer_ancestry process , is a three column tab separated file with Sample(Platekey), Family ID and Population asignments.
+      --inputSuper_pop_codes          File required for the infer_ancestry process, its tab separated file with population and super population relations and related information.
+      --input05both1K100K_eigenvec    File required for the infer_ancestry process, its tab separated file with eigenvectors.
+      --inputGELprojection_proj_eigenvec    File required for the infer_ancestry process, its tab separated file with eigenvectors and it has "NA" values in the last column.
+      --inputAncestryAssignmentProbs  File required for hwe_pruning_30k_snps process containing tab separated values for probabilities of assignments for the 31 populations code for each platekey(sample)
+      
+      
+
+
+
     Options:
       
       
