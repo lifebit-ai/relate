@@ -75,6 +75,12 @@ if (params.help) {
     exit 0
 }
 
+// Show help message
+if (params.help) {
+    helpMessage()
+    exit 0
+}
+
 /*
  * SET UP CONFIGURATION VARIABLES
  */
@@ -100,6 +106,8 @@ if (workflow.profile.contains('awsbatch')) {
 // Define variables
 query_format_start = params.query_format_start
 query_format_miss1 = params.query_format_miss1
+params.awk_expr_create_final_king_vcf_1= 'NR==FNR{c[\$1\$2\$3\$4]++;next}; c[\$1\$2\$4\$5] > 0'
+awk_expr_create_final_king_vcf_1 = params.awk_expr_create_final_king_vcf_1
 
 // Input list .csv file of tissues to analyse
 // [chr10_52955340_55447336, test_all_chunks_merged_norm_chr10_52955340_55447336.bcf.gz, test_all_chunks_merged_norm_chr10_52955340_55447336.bcf.gz.csi]
@@ -285,7 +293,7 @@ process create_final_king_vcf {
     -H MichiganLD_regionsFiltered_${region}.bcf \
     -S ${agg_samples_txt} \
     --force-samples \
-    | awk -F '\t' 'NR==FNR{c[\$1\$2\$3\$4]++;next}; c[\$1\$2\$4\$5] > 0' MAF_filtered_1kp3intersect_${region}.txt - >> ${region}_filtered.vcf
+    | awk -F '\t' '${awk_expr_create_final_king_vcf_1}' MAF_filtered_1kp3intersect_${region}.txt - >> ${region}_filtered.vcf
     bgzip ${region}_filtered.vcf
     tabix ${region}_filtered.vcf.gz
     """
@@ -510,15 +518,15 @@ process gcta{
     set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bed"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bim"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.fam"), file("autosomes_LD_pruned_1kgp3Intersect_related.bed"),file("autosomes_LD_pruned_1kgp3Intersect_related.bim"), file("autosomes_LD_pruned_1kgp3Intersect_related.fam") from king_coefficients
 
     output:
-    set file("autosomes_LD_pruned_1kgp3Intersect_unrelated*") , val(1) into ch_gcta
     
+    set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenval") , file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec.PROJ.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.N.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.id") into ch_gcta
 
     script:
     """
     gcta64 --bfile "autosomes_LD_pruned_1kgp3Intersect_unrelated" --make-grm-bin --thread-num 30 --out "autosomes_LD_pruned_1kgp3Intersect_unrelated"
     gcta64 --grm "autosomes_LD_pruned_1kgp3Intersect_unrelated" --pca 20  --out "autosomes_LD_pruned_1kgp3Intersect_unrelated" --thread-num 30
     gcta64 --bfile "autosomes_LD_pruned_1kgp3Intersect_unrelated" --pc-loading "autosomes_LD_pruned_1kgp3Intersect_unrelated" --out "autosomes_LD_pruned_1kgp3Intersect_unrelated" --thread-num 30
-    
+    awk 'BEGIN{OFS="    "}{print \$0, "NA"}' "autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec" > "autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec.PROJ.eigenvec"
     """
 }
 /* STEP_27
@@ -532,7 +540,7 @@ process infer_ancestry{
     file (kgp3_unrel) from ch_inputUNRELATED_1KGP3
     file "1KGP3_intersectGEL_200Kset_perpopHWE1e-6_unrel_maf0.05both1K100K.eigenvec" from ch_input05both1K100K_eigenvec
     file "1KGP3_intersectGEL_200Kset_perpopHWE1e-6_unrel_maf0.05both1K100K_GELprojection.proj.eigenvec" from ch_GELprojection_proj_eigenvec
-
+    set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenval") , file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec.PROJ.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.N.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.id") from ch_gcta
 
     output:
     file "predicted_ancestries.tsv" into ch_infer_ancestry
