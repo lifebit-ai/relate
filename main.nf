@@ -302,8 +302,8 @@ process create_final_king_vcf {
 /* STEP_21
  * STEP - concat_king_vcf: Concatenate compressed vcfs to per chromosome files
  */
-chrs = [10]
-//chrs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
+
+chrs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
 process concat_king_vcf {
     publishDir "${params.outdir}/concat_king_vcf/", mode: params.publish_dir_mode
 
