@@ -483,7 +483,7 @@ process king_coefficients{
 
        output:
        set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bed"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bim"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.fam"), file("autosomes_LD_pruned_1kgp3Intersect_related.bed"),file("autosomes_LD_pruned_1kgp3Intersect_related.bim"), file("autosomes_LD_pruned_1kgp3Intersect_related.fam") into king_coefficients
-    
+	   file("autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.in.id") into ch_unrelatedlist
 
        script:
     """
