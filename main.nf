@@ -285,15 +285,24 @@ process create_final_king_vcf {
  * STEP - concat_king_vcf: Concatenate compressed vcfs to per chromosome files
  */
 
-chrs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
+// For concatenation we need vcf files to be grouped by chromosome.
+ch_vcfs_groupped_by_chr =
+    ch_create_final_king_vcf
+        // Change region name to only contain chromosome number.
+        .map{ region, vcf, index -> [region.split("_")[0].replace("chr",""), vcf, index] }
+        // Group the tuples by chromosome number (by default the first element).
+        .groupTuple()
+        // The resulting channel has tuples of files coming from same chromome and should look as following:
+        // [10, [chr10_10000_20000_filtered.vcf.gz, chr10_20001_30000_filtered.vcf.gz], [chr10_10000_20000_filtered.vcf.gz.tbi, chr10_20001_30000_filtered.vcf.gz.tbi]]
+        // [22, [chr22_10000_20000_filtered.vcf.gz, chr22_20001_30000_filtered.vcf.gz], [chr22_10000_20000_filtered.vcf.gz.tbi, chr22_20001_30000_filtered.vcf.gz.tbi]]
+
+
 process concat_king_vcf {
     publishDir "${params.outdir}/concat_king_vcf/", mode: params.publish_dir_mode
 
     input:
-    set val(region), file("${region}_filtered.vcf.gz"), file("${region}_filtered.vcf.gz.tbi") from ch_create_final_king_vcf
-    file "*.vcf.gz" from ch_vcfs_create_final_king_vcf.collect()
-    file "*.tbi" from ch_tbi_create_final_king_vcf.collect()
-    each chr from chrs
+    tuple val(chr), file(vcf_files), file(vcf_file_indexes) from ch_vcfs_groupped_by_chr
+
     output:
     set val(chr),file("chrom${chr}_merged_filtered.vcf.gz"),file("chrom${chr}_merged_filtered.vcf.gz.tbi") into ch_vcfs_per_chromosome
 
