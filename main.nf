@@ -111,6 +111,8 @@ awk_expr_create_final_king_vcf_1 = params.awk_expr_create_final_king_vcf_1
                         .ifEmpty { exit 1, "Input dir for annotation txt files not found at ${params.inputDir}. Is the dir path correct?" }
                         .filter{txt -> txt =~/chr\d+/}
                         .map { txt -> ['chr'+ txt.simpleName.split('_chr').last() , txt] }
+                        // Filter out chunks from chrX, chrY and chrM - they should not be analysed in Ancestry and Relatedness pipeline
+                        .filter { it[0] =~ /chr[^XYM]/ }
                         .set { ch_bcftools_site_metrics_subcols }
 
   Channel.fromPath(params.inputFinalPlatekeys)
@@ -144,6 +146,8 @@ if (params.input.endsWith(".csv")) {
                         .splitCsv(sep: ',',  skip: 1)
                         .map { bcf, index -> ['chr'+file(bcf).simpleName.split('_chr').last() , file(bcf), file(index)] }
                         .filter{bcf -> bcf =~/chr\d+/}
+                        // Filter out chunks from chrX, chrY and chrM - they should not be analysed in Ancestry and Relatedness pipeline
+                        .filter { it[0] =~ /chr[^XYM]/ }
                         .set { ch_bcfs }
 
 }
@@ -471,7 +475,7 @@ process king_coefficients{
 
        output:
        set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bed"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bim"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.fam"), file("autosomes_LD_pruned_1kgp3Intersect_related.bed"),file("autosomes_LD_pruned_1kgp3Intersect_related.bim"), file("autosomes_LD_pruned_1kgp3Intersect_related.fam") into king_coefficients
-
+  	   file("autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.in.id") into ch_unrelatedlist
 
        script:
     """
