@@ -428,13 +428,8 @@ process hwe_pruning_30k_snps {
 
     script:
     """
-    R -e 'library(data.table);
-    library(dplyr);
-    dat <- fread("${ancestry_assignment_probs}") %>% as_tibble();
-    unrels <- fread("${pc_sancestry_related}") %>% as_tibble() %>% filter(unrelated_set == 1);
-    dat <- dat %>% filter(plate_key %in% unrels\$plate_key);
-    for(col in c("AFR","EUR","SAS","EAS")){dat[dat[col]>0.8,c("plate_key",col)] %>% write.table(paste0(col,"pop.txt"), quote = F, row.names=F)}
-    '
+    hwe_pops.R --ancestry_assignment_probs='${ancestry_assignment_probs}' \
+               --pc_sancestry_related='${pc_sancestry_related}'
 
     bedmain="autosomes_LD_pruned_1kgp3Intersect"
     for pop in AFR EUR SAS EAS; do
@@ -450,16 +445,7 @@ process hwe_pruning_30k_snps {
     done
 
     #Combine the HWE and produce a list of pass
-    R -e 'library(data.table);
-    library(dplyr);
-    dat <- lapply(c("EUR.hwe","AFR.hwe", "SAS.hwe", "EAS.hwe"),fread);
-    names(dat) <- c("EUR.hwe","AFR.hwe", "SAS.hwe", "EAS.hwe");
-    dat <- dat %>% bind_rows(.id="id");
-    write.table(dat, "combinedHWE.txt", row.names = F, quote = F)
-    #Create set that is just SNPS that are >1e-5 in all pops
-    dat %>% filter(P >1e-5) %>% group_by(SNP) %>% count() %>% filter(n==4) %>% select(SNP) %>% distinct() %>%
-    write.table("hwe1e-5_superpops_195ksnps", row.names = F, quote = F)
-    '
+    hwe_produce_pass.R
     """
 }
 
