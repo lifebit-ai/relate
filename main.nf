@@ -197,21 +197,26 @@ process sort_compress {
 /* STEP_18
  * STEP - filter_regions: Produce BCFs of our data filtered to sites pass sites
  */
+
+// Bcf and metrics channels are joined by region value, that carries exact identity of the bcf file and
+// its metrics file, to ensure bcf files are filtered by correct metrics. Joining is done by first element
+// in each tuple that carries the region value.
+ch_bcf_and_metrics_joined =
+    ch_bcfs.join(ch_sort_compress)
+
 process filter_regions {
     publishDir "${params.outdir}/regionsFiltered/", mode: params.publish_dir_mode
 
     input:
-    set val(region), file(bcf), file(index) from ch_bcfs
-    set val(region2),file ("BCFtools_site_metrics_SUBCOLS${region}_sorted.txt.gz"), file("BCFtools_site_metrics_SUBCOLS${region}_sorted.txt.gz.tbi") from ch_sort_compress
-
+    set val(region), file(bcf), file(index), file(site_metrics_file), file(site_metrics_file_index) from ch_bcf_and_metrics_joined
 
     output:
-    set val(region), file ("${region}_regionsFiltered.bcf") into ch_regions_filtered
+    set val(region), file("${region}_regionsFiltered.bcf") into ch_regions_filtered
 
     script:
     """
     bcftools view ${bcf} \
-    -T BCFtools_site_metrics_SUBCOLS${region}_sorted.txt.gz  \
+    -T ${site_metrics_file}  \
     -Ob \
     -o ${region}_regionsFiltered.bcf
     """
