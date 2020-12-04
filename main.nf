@@ -45,13 +45,13 @@ def helpMessage() {
 
         --michigan_ld_file [file]       File with regions to be filtered out for improving quality of sites selected.
 
-        --ancestry_assignment_probs [file]    File required for hwe_pruning_30k_snps process containing tab separated values
+        --ancestry_probs [file]         File required for hwe_pruning_30k_snps process containing tab separated values
                                         for probabilities of assignments for the 31 populations code for each participant.
 
-        --pcs_ancestry_related [file]   File with Principal Components information comming from reference resources of GEL
+        --pcs_ancestry [file]           File with Principal Components information comming from reference resources of GEL
                                         for the inferred ancestries from the 30k dataset.
 
-      #Example files temporarely required:
+      #Example files temporarily required:
 
         --unrelated_1kgp3 [file]        File required for the infer_ancestry process, is a two column tab separated file
                                         with platekeys on each column.
@@ -112,8 +112,8 @@ if (!params.input) exit 1, "The list of input bcf/vcf files was not provided. \n
 if (!params.included_samples) exit 1, "The list of participant IDs was not provided. \nPlease specify a text file containing participant IDs (platekeys) with --included_samples [file] option. \nUse --help option for more information."
 if (!params.siteqc_results_dir) exit 1, "The SiteQC results directory was not provided. \nPlease specify a path to SiteQC results directory with --siteqc_results_dir [path] option. \nUse --help option for more information."
 if (!params.michigan_ld_file) exit 1, "The file specifying genomic regions to exclude from Relatedness and Ancestry inference was not provided. \nPlease specify such file with --michigan_ld_file [file] option. \nUse --help option for more information."
-if (!params.ancestry_assignment_probs) exit 1, "The file with Ancestry assignment probabilities was not provided. \nPlease specify such file with --ancestry_assignment_probs [file] option. \nUse --help option for more information."
-if (!params.pcs_ancestry_related) exit 1, "The files with Ancestry Principal Components was not provided. \nPlease specify such file with --pcs_ancestry_related [file] option. \nUse --help option for more information."
+if (!params.ancestry_probs) exit 1, "The file with Ancestry assignment probabilities was not provided. \nPlease specify such file with --ancestry_probs [file] option. \nUse --help option for more information."
+if (!params.pcs_ancestry) exit 1, "The files with Ancestry Principal Components was not provided. \nPlease specify such file with --pcs_ancestry [file] option. \nUse --help option for more information."
 
 
 // Define channels based on params
@@ -140,11 +140,11 @@ ch_super_pop_codes = Channel.fromPath(params.super_pop_codes)
 ch_michigan_ld_file = Channel.fromPath(params.michigan_ld_file)
             .ifEmpty { exit 1, "Input file with Michigan LD for excluding regions  not found at ${params.michigan_ld_file}. Is the file path correct?" }
 
-ch_ancestry_assignment_probs = Channel.fromPath(params.ancestry_assignment_probs)
-            .ifEmpty { exit 1, "Input file with ancestry assignment probabilities not found at ${params.ancestry_assignment_probs}. Is the file path correct?" }
+ch_ancestry_probs = Channel.fromPath(params.ancestry_probs)
+            .ifEmpty { exit 1, "Input file with ancestry assignment probabilities not found at ${params.ancestry_probs}. Is the file path correct?" }
 
-ch_pcs_ancestry_related = Channel.fromPath(params.pcs_ancestry_related)
-            .ifEmpty { exit 1, "Input file with ancestry Principal Components not found at ${params.pcs_ancestry_related}. Is the file path correct?" }
+ch_pcs_ancestry = Channel.fromPath(params.pcs_ancestry)
+            .ifEmpty { exit 1, "Input file with ancestry Principal Components not found at ${params.pcs_ancestry}. Is the file path correct?" }
 
 
 ch_unrelated_1kgp3 = Channel.fromPath(params.unrelated_1kgp3)
@@ -165,8 +165,8 @@ summary['Input bcf list']   = params.input
 summary['Included samples'] = params.included_samples
 summary['Siteqc results dir']=params.siteqc_results_dir
 summary['Michigan LD file'] = params.michigan_ld_file
-summary['Ancestry assignment probs'] = params.ancestry_assignment_probs
-summary['PCs ancestry']     = params.pcs_ancestry_related
+summary['Ancestry probs']   = params.ancestry_probs
+summary['PCs ancestry']     = params.pcs_ancestry
 summary['Super pop codes']  = params.super_pop_codes
 summary['Output dir']       = params.outdir
 summary['Launch dir']       = workflow.launchDir
@@ -440,8 +440,8 @@ process hwe_pruning_30k_snps {
 
     input:
     tuple file(bed), file(bim), file(fam), file(nosex) from ch_merged_autosomes_hwe_pruning_30k_snps
-    file(ancestry_assignment_probs) from ch_ancestry_assignment_probs
-    file(pc_sancestry_related) from ch_pcs_ancestry_related
+    file(ancestry_probs) from ch_ancestry_probs
+    file(pc_sancestry_related) from ch_pcs_ancestry
 
     output:
     file("hwe1e-5_superpops_195ksnps") into ch_hwe_pruning_30k_snps
@@ -449,7 +449,7 @@ process hwe_pruning_30k_snps {
     script:
     plink_base = bed.baseName
     """
-    hwe_pops.R --ancestry_assignment_probs='${ancestry_assignment_probs}' \
+    hwe_pops.R --ancestry_probs='${ancestry_probs}' \
                --pc_sancestry_related='${pc_sancestry_related}'
 
     for pop in AFR EUR SAS EAS; do
