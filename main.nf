@@ -174,14 +174,12 @@ process sort_compress {
     publishDir "${params.outdir}/bcftools_site_metrics_subcols/", mode: params.publish_dir_mode
 
     input:
-    set val(region), file(bcftools_site_metrics_subcols) from ch_bcftools_site_metrics_subcols
-
+    tuple val(region), file(bcftools_site_metrics_subcols) from ch_bcftools_site_metrics_subcols
 
     output:
-    set val(region),file ("BCFtools_site_metrics_SUBCOLS${region}_sorted.txt.gz"), file("BCFtools_site_metrics_SUBCOLS${region}_sorted.txt.gz.tbi") into ch_sort_compress
+    tuple val(region), file("BCFtools_site_metrics_SUBCOLS${region}_sorted.txt.gz"), file("BCFtools_site_metrics_SUBCOLS${region}_sorted.txt.gz.tbi") into ch_sort_compress
 
     script:
-
     """
     sort -k2 -n ${bcftools_site_metrics_subcols} > BCFtools_site_metrics_SUBCOLS${region}_sorted.txt
     bgzip -f BCFtools_site_metrics_SUBCOLS${region}_sorted.txt && \
@@ -204,10 +202,10 @@ process filter_regions {
     publishDir "${params.outdir}/regionsFiltered/", mode: params.publish_dir_mode
 
     input:
-    set val(region), file(bcf), file(index), file(site_metrics_file), file(site_metrics_file_index) from ch_bcf_and_metrics_joined
+    tuple val(region), file(bcf), file(index), file(site_metrics_file), file(site_metrics_file_index) from ch_bcf_and_metrics_joined
 
     output:
-    set val(region), file("${region}_regionsFiltered.bcf") into ch_regions_filtered
+    tuple val(region), file("${region}_regionsFiltered.bcf") into ch_regions_filtered
 
     script:
     """
@@ -223,10 +221,10 @@ process further_filtering {
     publishDir "${params.outdir}/further_filtering/", mode: params.publish_dir_mode
 
     input:
-    set val(region), file(bcf_filtered) from ch_regions_filtered
+    tuple val(region), file(bcf_filtered) from ch_regions_filtered
 
     output:
-    set val(region), file("MichiganLD_regionsFiltered_${region}.bcf"), file("MAF_filtered_1kp3intersect_${region}.txt") into ch_further_filtering
+    tuple val(region), file("MichiganLD_regionsFiltered_${region}.bcf"), file("MAF_filtered_1kp3intersect_${region}.txt") into ch_further_filtering
 
     script:
     """
@@ -253,13 +251,12 @@ process create_final_king_vcf {
     publishDir "${params.outdir}/create_final_king_vcf/", mode: params.publish_dir_mode
 
     input:
-    set val(region), file("MichiganLD_regionsFiltered_${region}.bcf"), file("MAF_filtered_1kp3intersect_${region}.txt") from ch_further_filtering
-    file agg_samples_txt from ch_inputFinalPlatekeys
+    tuple val(region), file(filtered_bcf), file(maf_filtered_variants) from ch_further_filtering
+    each file(agg_samples_txt) from ch_inputFinalPlatekeys
 
     output:
-    set val(region), file("${region}_filtered.vcf.gz"), file("${region}_filtered.vcf.gz.tbi") into ch_create_final_king_vcf
-    file "${region}_filtered.vcf.gz" into ch_vcfs_create_final_king_vcf
-    file "${region}_filtered.vcf.gz.tbi" into ch_tbi_create_final_king_vcf
+    tuple val(region), file("${region}_filtered.vcf.gz"), file("${region}_filtered.vcf.gz.tbi") into ch_create_final_king_vcf
+
     script:
     """
     #Now filter down our file to just samples we want in our GRM. This removes any withdrawals that we learned of during the process of aggregation
@@ -267,7 +264,7 @@ process create_final_king_vcf {
     bcftools view \
     -S ${agg_samples_txt} \
     --force-samples \
-    -h MichiganLD_regionsFiltered_${region}.bcf \
+    -h ${filtered_bcf} \
     > ${region}_filtered.vcf
 
     #Then match against all variant cols in our subsetted bcf to our maf filtered, intersected sites and only print those that are in the variant file.
@@ -276,7 +273,7 @@ process create_final_king_vcf {
     -H MichiganLD_regionsFiltered_${region}.bcf \
     -S ${agg_samples_txt} \
     --force-samples \
-    | awk -F '\t' '${awk_expr_create_final_king_vcf_1}' MAF_filtered_1kp3intersect_${region}.txt - >> ${region}_filtered.vcf
+    | awk -F '\t' '${awk_expr_create_final_king_vcf_1}' ${maf_filtered_variants} - >> ${region}_filtered.vcf
     bgzip ${region}_filtered.vcf
     tabix ${region}_filtered.vcf.gz
     """
@@ -305,17 +302,15 @@ process concat_king_vcf {
     tuple val(chr), file(vcf_files), file(vcf_file_indexes) from ch_vcfs_groupped_by_chr
 
     output:
-    set val(chr),file("chrom${chr}_merged_filtered.vcf.gz"),file("chrom${chr}_merged_filtered.vcf.gz.tbi") into ch_vcfs_per_chromosome
+    tuple val(chr), file("chrom${chr}_merged_filtered.vcf.gz"), file("chrom${chr}_merged_filtered.vcf.gz.tbi") into ch_vcfs_per_chromosome
 
     script:
     """
-    find -L . -type f -name chr${chr}_*.vcf.gz > tmp.files_chrom${chr}.txt
-    bcftools concat \
-    -f tmp.files_chrom${chr}.txt \
+    bcftools concat ${vcf_files} \
     -Oz \
     -o chrom${chr}_merged_filtered.vcf.gz && \
-    tabix chrom${chr}_merged_filtered.vcf.gz && \
-    rm tmp.files_chrom${chr}.txt
+
+    tabix chrom${chr}_merged_filtered.vcf.gz
     """
 }
 
@@ -327,16 +322,16 @@ process make_bed_all {
     publishDir "${params.outdir}/make_bed_all/", mode: params.publish_dir_mode
 
     input:
-    set val(chr),file("chrom${chr}_merged_filtered.vcf.gz"),file("chrom${chr}_merged_filtered.vcf.gz.tbi") from ch_vcfs_per_chromosome
+    tuple val(chr), file(vcf), file(index) from ch_vcfs_per_chromosome
     each file(michiganld_exclude_regions_file) from ch_inputMichiganLDfileExclude
 
     output:
-    set val(chr),file("BED_${chr}.bed"),file("BED_${chr}.bim"),file("BED_${chr}.fam") into ch_make_bed_all
+    tuple val(chr), file("BED_${chr}.bed"), file("BED_${chr}.bim"), file("BED_${chr}.fam") into ch_make_bed_all
 
     script:
     """
     stringQuery='#-\$r/\$a-.-.'
-    plink2 --vcf chrom${chr}_merged_filtered.vcf.gz \
+    plink2 --vcf ${vcf} \
     --make-bed \
     --vcf-half-call m \
     --set-missing-var-ids chr@:\$stringQuery \
@@ -345,9 +340,10 @@ process make_bed_all {
     --double-id \
     --real-ref-alleles \
     --allow-extra-chr \
-    --threads 30 \
+    --threads ${task.cpus} \
     --out BED_${chr}
     """
+
 }
 /* STEP_23
  * STEP - ld_bed: LD prune SNPs
@@ -357,31 +353,32 @@ process make_bed_all {
     publishDir "${params.outdir}/ld_bed/", mode: params.publish_dir_mode
 
     input:
-    set val(chr),file("BED_${chr}.bed"),file("BED_${chr}.bim"),file("BED_${chr}.fam") from ch_make_bed_all
+    tuple val(chr), file(bed), file(bim), file(fam) from ch_make_bed_all
 
     output:
-    file "BED_LDpruned_${chr}*" into ch_ld_bed
+    file("BED_LDpruned_${chr}*") into ch_ld_bed
 
     script:
+    plink_base = bed.baseName
     """
     #Not considering founders in this as all of our SNPs are common
     plink  \
     --keep-allele-order \
-    --bfile BED_${chr} \
+    --bfile ${plink_base} \
     --indep-pairwise 500kb 1 0.1 \
-    --threads 30 \
+    --threads ${task.cpus} \
     --out BED_LD_${chr}
 
     #Now that we have our correct list of SNPs (prune.in), filter the original
     #bed file to just these sites
     plink \
     --make-bed \
-    --bfile BED_${chr} \
+    --bfile ${plink_base} \
     --keep-allele-order \
     --extract BED_LD_${chr}.prune.in \
     --double-id \
     --allow-extra-chr \
-    --threads 30 \
+    --threads ${task.cpus} \
     --out BED_LDpruned_${chr}
     """
 }
@@ -394,17 +391,21 @@ process merge_autosomes {
     publishDir "${params.outdir}/merge_autosomes/", mode: params.publish_dir_mode
 
     input:
-    file chr_ld_pruned_bed from ch_ld_bed.collect()
+    file(bed_ld_files) from ch_ld_bed.collect()
 
     output:
-    set file("autosomes_LD_pruned_1kgp3Intersect.bed"), file("autosomes_LD_pruned_1kgp3Intersect.bim"), file("autosomes_LD_pruned_1kgp3Intersect.fam"),file("autosomes_LD_pruned_1kgp3Intersect.nosex") into (ch_merge_autosomes , ch_merge_autosomes2, ch_merge_autosomes3, ch_merge_autosomes4)
+    tuple file("autosomes_LD_pruned_1kgp3Intersect.bed"),
+          file("autosomes_LD_pruned_1kgp3Intersect.bim"),
+          file("autosomes_LD_pruned_1kgp3Intersect.fam"),
+          file("autosomes_LD_pruned_1kgp3Intersect.nosex") into (ch_merged_autosomes_hwe_pruning_30k_snps,
+                                                                 ch_merged_autosomes_king_coefficients)
 
     script:
     """
     for i in {1..22}; do if [ -f "BED_LDpruned_\$i.bed" ]; then echo BED_LDpruned_\$i >> mergelist.txt; fi ;done
     plink --merge-list mergelist.txt \
     --make-bed \
-    --out autosomes_LD_pruned_1kgp3Intersect
+    --out "autosomes_LD_pruned_1kgp3Intersect"
     rm mergelist.txt
     """
 }
@@ -414,27 +415,29 @@ process merge_autosomes {
  */
 process hwe_pruning_30k_snps {
     publishDir "${params.outdir}/hwe_pruning_30k_snps/", mode: params.publish_dir_mode
+
     input:
-    set file("autosomes_LD_pruned_1kgp3Intersect.bed"), file("autosomes_LD_pruned_1kgp3Intersect.bim"), file("autosomes_LD_pruned_1kgp3Intersect.fam"),file("autosomes_LD_pruned_1kgp3Intersect.nosex") from ch_merge_autosomes
-    file (ancestry_assignment_probs) from ch_inputAncestryAssignmentProbs
-    file (pc_sancestry_related) from ch_inputPCsancestryrelated
+    tuple file(bed), file(bim), file(fam), file(nosex) from ch_merged_autosomes_hwe_pruning_30k_snps
+    file(ancestry_assignment_probs) from ch_inputAncestryAssignmentProbs
+    file(pc_sancestry_related) from ch_inputPCsancestryrelated
 
     output:
-    file "hwe1e-5_superpops_195ksnps" into hwe_pruning_30k_snps
+    file("hwe1e-5_superpops_195ksnps") into ch_hwe_pruning_30k_snps
 
     script:
+    plink_base = bed.baseName
     """
     hwe_pops.R --ancestry_assignment_probs='${ancestry_assignment_probs}' \
                --pc_sancestry_related='${pc_sancestry_related}'
 
-    bedmain="autosomes_LD_pruned_1kgp3Intersect"
     for pop in AFR EUR SAS EAS; do
         echo \${pop}
-        awk '{print \$1"\t"\$1}' \${pop}pop.txt > \${pop}keep
+        awk '{print \$1"\\t"\$1}' \${pop}pop.txt > \${pop}keep
+
         plink \
         --keep-allele-order \
         --make-bed \
-        --bfile \${bedmain} \
+        --bfile ${plink_base} \
         --out \${pop}
 
         plink --bfile \${pop} --hardy midp --out \${pop} --nonfounders
@@ -448,42 +451,50 @@ process hwe_pruning_30k_snps {
 /* STEP_26
  */
 process king_coefficients{
-       publishDir "${params.outdir}/king_coefficients/", mode: params.publish_dir_mode
+    publishDir "${params.outdir}/king_coefficients/", mode: params.publish_dir_mode
 
+    input:
+    tuple file(bed), file(bim), file(fam), file(nosex) from ch_merged_autosomes_king_coefficients
+    file(significant_superpops_snps) from ch_hwe_pruning_30k_snps
 
+    output:
+    tuple file("${bed.baseName}_unrelated.bed"),
+          file("${bed.baseName}_unrelated.bim"),
+          file("${bed.baseName}_unrelated.fam") into ch_king_coefficients_unrelated
+    tuple file("${bed.baseName}_related.bed"),
+          file("${bed.baseName}_related.bim"),
+          file("${bed.baseName}_related.fam") into ch_king_coefficients_related
+  	file("${bed.baseName}_triangle_HWE1_5.king.cutoff.in.id") into ch_unrelatedlist
 
-       input:
-       set file("autosomes_LD_pruned_1kgp3Intersect.bed"), file("autosomes_LD_pruned_1kgp3Intersect.bim"), file("autosomes_LD_pruned_1kgp3Intersect.fam"),file("autosomes_LD_pruned_1kgp3Intersect.nosex") from ch_merge_autosomes2
-       file "hwe1e-5_superpops_195ksnps" from hwe_pruning_30k_snps
-
-       output:
-       set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bed"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bim"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.fam"), file("autosomes_LD_pruned_1kgp3Intersect_related.bed"),file("autosomes_LD_pruned_1kgp3Intersect_related.bim"), file("autosomes_LD_pruned_1kgp3Intersect_related.fam") into king_coefficients
-  	   file("autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.in.id") into ch_unrelatedlist
-
-       script:
+    script:
+    plink_base = bed.baseName
     """
     plink2 \
-    --bfile autosomes_LD_pruned_1kgp3Intersect \
-    --extract hwe1e-5_superpops_195ksnps \
+    --bfile ${plink_base} \
+    --extract ${significant_superpops_snps} \
     --make-king triangle bin \
-    --out autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1e_5 \
-    --thread-num 30
+    --out "${plink_base}_triangle_HWE1e_5" \
+    --thread-num ${task.cpus}
     echo "done1"
 
-    plink2 --bfile autosomes_LD_pruned_1kgp3Intersect \
-       --king-cutoff autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1e_5 0.0442 && \
-       mv plink2.king.cutoff.in.id  autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.in.id && \
-       mv plink2.king.cutoff.out.id  autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.out.id
+    plink2 \
+    --bfile ${plink_base} \
+    --king-cutoff "${plink_base}_triangle_HWE1e_5" 0.0442 && \
+    mv "plink2.king.cutoff.in.id" "${plink_base}_triangle_HWE1_5.king.cutoff.in.id" && \
+    mv "plink2.king.cutoff.out.id" "${plink_base}_triangle_HWE1_5.king.cutoff.out.id"
 
-    plink2 --bfile autosomes_LD_pruned_1kgp3Intersect \
+    plink2 \
+    --bfile ${plink_base} \
     --make-bed \
-    --keep autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.in.id \
-    --out autosomes_LD_pruned_1kgp3Intersect_unrelated
+    --keep "${plink_base}_triangle_HWE1_5.king.cutoff.in.id" \
+    --out "${plink_base}_unrelated"
     echo "done2"
-    plink2 --bfile autosomes_LD_pruned_1kgp3Intersect \
+
+    plink2 \
+    --bfile ${plink_base} \
     --make-bed \
-    --remove autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.in.id \
-    --out autosomes_LD_pruned_1kgp3Intersect_related
+    --remove "${plink_base}_triangle_HWE1_5.king.cutoff.in.id" \
+    --out "${plink_base}_related"
     echo "done3"
     """
 }
@@ -493,18 +504,35 @@ process gcta{
     publishDir "${params.outdir}/gcta/", mode: params.publish_dir_mode
 
     input:
-    set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bed"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bim"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.fam"), file("autosomes_LD_pruned_1kgp3Intersect_related.bed"),file("autosomes_LD_pruned_1kgp3Intersect_related.bim"), file("autosomes_LD_pruned_1kgp3Intersect_related.fam") from king_coefficients
+    tuple file(bed), file(bim), file(fam) from ch_king_coefficients_unrelated
 
     output:
-
-    set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenval") , file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec.PROJ.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.N.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.id") into ch_gcta
+    tuple file("${bed.baseName}.eigenval"),
+          file("${bed.baseName}.eigenvec"),
+          file("${bed.baseName}.eigenvec.PROJ.eigenvec"),
+          file("${bed.baseName}.grm.N.bin"),
+          file("${bed.baseName}.grm.bin"),
+          file("${bed.baseName}.grm.id") into ch_gcta
 
     script:
+    plink_base = bed.baseName
     """
-    gcta64 --bfile "autosomes_LD_pruned_1kgp3Intersect_unrelated" --make-grm-bin --thread-num 30 --out "autosomes_LD_pruned_1kgp3Intersect_unrelated"
-    gcta64 --grm "autosomes_LD_pruned_1kgp3Intersect_unrelated" --pca ${n_pca}  --out "autosomes_LD_pruned_1kgp3Intersect_unrelated" --thread-num 30
-    gcta64 --bfile "autosomes_LD_pruned_1kgp3Intersect_unrelated" --pc-loading "autosomes_LD_pruned_1kgp3Intersect_unrelated" --out "autosomes_LD_pruned_1kgp3Intersect_unrelated" --thread-num 30
-    awk 'BEGIN{OFS="    "}{print \$0, "NA"}' "autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec" > "autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec.PROJ.eigenvec"
+    gcta64 --bfile ${plink_base} \
+    --make-grm-bin \
+    --thread-num ${task.cpus} \
+    --out ${plink_base}
+
+    gcta64 --grm ${plink_base} \
+    --pca ${n_pca} \
+    --out ${plink_base} \
+    --thread-num ${task.cpus}
+
+    gcta64 --bfile ${plink_base} \
+    --pc-loading ${plink_base} \
+    --out ${plink_base} \
+    --thread-num ${task.cpus}
+
+    awk 'BEGIN{OFS="    "}{print \$0, "NA"}' "${plink_base}.eigenvec" > "${plink_base}.eigenvec.PROJ.eigenvec"
     """
 }
 /* STEP_27
@@ -513,16 +541,16 @@ process infer_ancestry{
     publishDir "${params.outdir}/infer_ancestry/", mode: params.publish_dir_mode
 
     input:
-    file (kgp3_sample_table) from ch_input1KGP3
-    file (super_pop_codes) from ch_inputSuper_pop_codes
-    file (kgp3_unrel) from ch_inputUNRELATED_1KGP3
-    file "1KGP3_intersectGEL_200Kset_perpopHWE1e-6_unrel_maf0.05both1K100K.eigenvec" from ch_input05both1K100K_eigenvec
-    file "1KGP3_intersectGEL_200Kset_perpopHWE1e-6_unrel_maf0.05both1K100K_GELprojection.proj.eigenvec" from ch_GELprojection_proj_eigenvec
-    set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenval") , file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec.PROJ.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.N.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.id") from ch_gcta
+    file(kgp3_sample_table) from ch_input1KGP3
+    file(super_pop_codes) from ch_inputSuper_pop_codes
+    file(kgp3_unrel) from ch_inputUNRELATED_1KGP3
+    file(eigenvec) from ch_input05both1K100K_eigenvec
+    file(projections) from ch_GELprojection_proj_eigenvec
+    tuple file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenval"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec.PROJ.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.N.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.id") from ch_gcta
 
     output:
-    file "predicted_ancestries.tsv" into ch_infer_ancestry
-    file "results.RDS" into ch_infer_ancestry_2
+    file("predicted_ancestries.tsv") into ch_infer_ancestry
+    file("results.RDS") into ch_infer_ancestry_2
 
     script:
     """
@@ -531,8 +559,8 @@ process infer_ancestry{
     ${kgp3_sample_table} \
     ${super_pop_codes} \
     ${kgp3_unrel} \
-    "1KGP3_intersectGEL_200Kset_perpopHWE1e-6_unrel_maf0.05both1K100K.eigenvec" \
-    "1KGP3_intersectGEL_200Kset_perpopHWE1e-6_unrel_maf0.05both1K100K_GELprojection.proj.eigenvec" \
+    ${eigenvec} \
+    ${projections} \
     "Ancestries"
     """
 }
