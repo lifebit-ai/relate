@@ -119,12 +119,8 @@ awk_expr_create_final_king_vcf_1 = params.awk_expr_create_final_king_vcf_1
                         .ifEmpty { exit 1, "Input file with Michigan LD data not found at ${params.inputAncestryAssignmentProbs}. Is the file path correct?" }
                         .set { ch_inputAncestryAssignmentProbs }
 
-   Channel.fromPath(params.inputProbs200K)
-                        .ifEmpty { exit 1, "Input file with Ancestry assignments of 200K data not found at ${params.inputinputProbs200K}. Is the file path correct?" }
-                        .set { ch_inputinputProbs200K }
-
   Channel.fromPath(params.inputMichiganLDfileExclude)
-                        .ifEmpty { exit 1, "Input file with Michigan LD for excluding regions  not found at ${params.inputMichiganLDfile}. Is the file path correct?" }
+                        .ifEmpty { exit 1, "Input file with Michigan LD for excluding regions  not found at ${params.inputMichiganLDfileExclude}. Is the file path correct?" }
                         .set { ch_inputMichiganLDfileExclude }
 if (params.input.endsWith(".csv")) {
 
@@ -332,12 +328,12 @@ process make_bed_all {
 
     input:
     set val(chr),file("chrom${chr}_merged_filtered.vcf.gz"),file("chrom${chr}_merged_filtered.vcf.gz.tbi") from ch_vcfs_per_chromosome
-    file(michiganld_exclude_regions_file) from ch_inputMichiganLDfileExclude
+    each file(michiganld_exclude_regions_file) from ch_inputMichiganLDfileExclude
+
     output:
     set val(chr),file("BED_${chr}.bed"),file("BED_${chr}.bim"),file("BED_${chr}.fam") into ch_make_bed_all
 
     script:
-
     """
     stringQuery='#-\$r/\$a-.-.'
     plink2 --vcf chrom${chr}_merged_filtered.vcf.gz \
