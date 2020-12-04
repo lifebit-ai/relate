@@ -20,54 +20,67 @@ def helpMessage() {
     nextflow run  lifebit-ai/relate --input .. -profile docker
 
     Mandatory arguments:
-      --input [file]                  File with list of full paths to bcf files and their indexes. Bcf files can be compressed but in a readable for bcftools format.
-                                      The name of the files must be consistent across files.
-                                      see example:
-                                      test_all_chunks_merged_norm_chr10_53607810_55447336.bcf.gz
-                                      {name}_{CHR}_{START_POS}_{END_POS}.bcf.gz
-                                      Consistency is important here as a variable ('region')
-                                      is extracted from the filename.
+        --input [file]                  File with list of full paths to bcf files and their indexes.
+                                        Bcf files can be compressed but in a readable for bcftools format.
+                                        Example:
+                                        #-----my_bcf_files_list.csv-----------#
+                                        | bcf,index                           |
+                                        | <file1.bcf>,<file1.bcf.idx>         |
+                                        | <file2.bcf.gz>,<file2.bcf.gz.csi>   |
+                                        | <file3.bcf.bgz>,<file3.bcf.bgz.tbx> |
+                                        #-------------------------------------#
+                                        The name of the files must be consistent across files
+                                        and follow a specific pattern:
+                                        {name}_{CHR}_{START_POS}_{END_POS}.bcf.gz
+                                        Example:
+                                        test_all_chunks_merged_norm_chr10_53607810_55447336.bcf.gz
+                                        Consistency is important here as a variable ('region')
+                                        is extracted from the filename.
 
-      -profile [str]                  Configuration profile to use. Can use multiple (comma separated)
-                                      Available: conda, docker, singularity, test, awsbatch, <institute> and more
+        --included_samples [file]       File with a list of participant IDs to be included in the analysis.
 
-      --inputDir                      Input dir for annotation ".txt" files for each of the regions (or chunks ), comming from the metrics compoment and first aggregate annotation of SiteQC pipeline.
-      --inputMichiganLDfileExclude    File with regions to be filtered out for improving quality of sites selected.
-      --inputPCsancestryrelated       File with Principal Components information comming from reference resources of GEL for the inferred ancestries from the 30k dataset.
-      --inputFinalPlatekeys           File with a list of platekeys to be included in the analysis , required for "create_final_king_vcf" process.
-      --inputProbs200K                File with Ancestry assignments from GEL's reference resources.
-      --inputUNRELATED_1KGP3          File required for the infer_ancestry process , is a two column tab separated file with platekeys on each column.
-      --input1KGP3                    File required for the infer_ancestry process , is a three column tab separated file with Sample(Platekey), Family ID and Population asignments.
-      --inputSuper_pop_codes          File required for the infer_ancestry process, its tab separated file with population and super population relations and related information.
-      --input05both1K100K_eigenvec    File required for the infer_ancestry process, its tab separated file with eigenvectors.
-      --inputGELprojection_proj_eigenvec    File required for the infer_ancestry process, its tab separated file with eigenvectors and it has "NA" values in the last column.
-      --inputAncestryAssignmentProbs  File required for hwe_pruning_30k_snps process containing tab separated values for probabilities of assignments for the 31 populations code for each platekey(sample)
-      --n_pca                          Number of Principal Components desired for gcta process
+        --siteqc_results_dir [dir]      The results directory of SiteQC pipeline, that has all metrics files
+                                        generated from bcf/vcf files provided with --input option. Only final siteqc
+                                        annotation files from sub-folder "Annotate" will be used in this pipeline.
+
+        --michigan_ld_file [file]       File with regions to be filtered out for improving quality of sites selected.
+
+        --ancestry_probs [file]         File required for hwe_pruning_30k_snps process containing tab separated values
+                                        for probabilities of assignments for the 31 populations code for each participant.
+
+        --pcs_ancestry [file]           File with Principal Components information comming from reference resources of GEL
+                                        for the inferred ancestries from the 30k dataset.
+
+      #Example files temporarily required:
+
+        --unrelated_1kgp3 [file]        File required for the infer_ancestry process, is a two column tab separated file
+                                        with platekeys on each column.
+        --samplelist_1kgp3 [file]       File required for the infer_ancestry process, is a three column tab separated file
+                                        with Sample(Platekey), Family ID and Population asignments.
+        --example_eigenvec [file]       File required for the infer_ancestry process, its tab separated file with eigenvectors.
+        --example_proj_eigenvec [file]  File required for the infer_ancestry process, its tab separated file with eigenvectors.
+                                        and it has "NA" values in the last column.
 
 
-    Options:
+    Optional arguments:
+        --super_pop_codes               Tab separated file with population and super population relations and related information.
+                                        Required for the infer_ancestry process. It is a general reference file.
+                                        By default the following file is used:
+                                        s3://lifebit-featured-datasets/projects/gel/siteqc/super_pop_codes.tsv
+
+        --n_pca [integer]               Number of Principal Components desired for gcta process. (Default: 20)
 
 
     Other options:
-      --outdir [file]                 The output directory where the results will be saved
-      --publish_dir_mode [str]        Mode for publishing results in the output directory. Available: symlink, rellink, link, copy, copyNoFollow, move (Default: copy)
-      --email [email]                 Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits
-      --email_on_fail [email]         Same as --email, except only send mail if the workflow is not successful
-      --max_multiqc_email_size [str]  Threshold size for MultiQC report to be attached in notification email. If file generated by pipeline exceeds the threshold, it will not be attached (Default: 25MB)
-      -name [str]                     Name for the pipeline run. If not specified, Nextflow will automatically generate a random mnemonic
+        -profile [str]                  Configuration profile to use. Can use multiple (comma separated).
+                                        Available: standard, test. (Default: standard)
+        --outdir [file]                 The output directory where the results will be saved.
+        --publish_dir_mode [str]        Mode for publishing results in the output directory. Available: symlink, rellink, link, copy, copyNoFollow, move. (Default: copy)
+        -name [str]                     Name for the pipeline run. If not specified, Nextflow will automatically generate a random mnemonic.
 
-    AWSBatch options:
-      --awsqueue [str]                The AWSBatch JobQueue that needs to be set when running on AWSBatch
-      --awsregion [str]               The AWS Region for your AWS Batch job to run on
-      --awscli [str]                  Path to the AWS CLI tool
     """.stripIndent()
 }
 
-// Show help message
-if (params.help) {
-    helpMessage()
-    exit 0
-}
 
 // Show help message
 if (params.help) {
@@ -86,74 +99,59 @@ if (!(workflow.runName ==~ /[a-z]+_[a-z]+/)) {
     custom_runName = workflow.runName
 }
 
-// Check AWS batch settings
-if (workflow.profile.contains('awsbatch')) {
-    // AWSBatch sanity checking
-    if (!params.awsqueue || !params.awsregion) exit 1, "Specify correct --awsqueue and --awsregion parameters on AWSBatch!"
-    // Check outdir paths to be S3 buckets if running on AWSBatch
-    // related: https://github.com/nextflow-io/nextflow/issues/813
-    if (!params.outdir.startsWith('s3:')) exit 1, "Outdir not on S3 - specify S3 Bucket to run on AWSBatch!"
-    // Prevent trace files to be stored on S3 since S3 does not support rolling files.
-    if (params.tracedir.startsWith('s3:')) exit 1, "Specify a local tracedir or run without trace! S3 cannot be used for tracefiles."
-}
-
 // Define variables
-query_format_start = params.query_format_start
-query_format_miss1 = params.query_format_miss1
 n_pca = params.n_pca
 awk_expr_create_final_king_vcf_1 = params.awk_expr_create_final_king_vcf_1
 
-// Input list .csv file of tissues to analyse
-// [chr10_52955340_55447336, test_all_chunks_merged_norm_chr10_52955340_55447336.bcf.gz, test_all_chunks_merged_norm_chr10_52955340_55447336.bcf.gz.csi]
+/*
+ * Check all important required inputs
+ */
+
+// Check if user provided input csv file containing paths to bcf files and their indexes
+if (!params.input) exit 1, "The list of input bcf/vcf files was not provided. \nPlease specify a csv file containing paths to bcf/vcf files and their indexes with --input [file] option. \nUse --help option for more information."
+if (!params.included_samples) exit 1, "The list of participant IDs was not provided. \nPlease specify a text file containing participant IDs (platekeys) with --included_samples [file] option. \nUse --help option for more information."
+if (!params.siteqc_results_dir) exit 1, "The SiteQC results directory was not provided. \nPlease specify a path to SiteQC results directory with --siteqc_results_dir [path] option. \nUse --help option for more information."
+if (!params.michigan_ld_file) exit 1, "The file specifying genomic regions to exclude from Relatedness and Ancestry inference was not provided. \nPlease specify such file with --michigan_ld_file [file] option. \nUse --help option for more information."
+if (!params.ancestry_probs) exit 1, "The file with Ancestry assignment probabilities was not provided. \nPlease specify such file with --ancestry_probs [file] option. \nUse --help option for more information."
+if (!params.pcs_ancestry) exit 1, "The files with Ancestry Principal Components was not provided. \nPlease specify such file with --pcs_ancestry [file] option. \nUse --help option for more information."
+
 
 // Define channels based on params
-  Channel.fromPath(params.inputDir+'/*.txt')
-                        .ifEmpty { exit 1, "Input dir for annotation txt files not found at ${params.inputDir}. Is the dir path correct?" }
-                        .filter{txt -> txt =~/chr\d+/}
-                        .map { txt -> ['chr'+ txt.simpleName.split('_chr').last() , txt] }
-                        // Filter out chunks from chrX, chrY and chrM - they should not be analysed in Ancestry and Relatedness pipeline
-                        .filter { it[0] =~ /chr[^XYM]/ }
-                        .set { ch_bcftools_site_metrics_subcols }
 
-  Channel.fromPath(params.inputFinalPlatekeys)
-                        .ifEmpty { exit 1, "Input file with samples and platekeys data not found at ${params.inputFinalPlatekeys}. Is the file path correct?" }
-                        .set { ch_inputFinalPlatekeys }
-  Channel.fromPath(params.inputUNRELATED_1KGP3).set { ch_inputUNRELATED_1KGP3 }
-  Channel.fromPath(params.input1KGP3).set { ch_input1KGP3 }
-  Channel.fromPath(params.inputSuper_pop_codes).set { ch_inputSuper_pop_codes }
-  Channel.fromPath(params.input05both1K100K_eigenvec).set { ch_input05both1K100K_eigenvec }
-  Channel.fromPath(params.inputGELprojection_proj_eigenvec).set { ch_GELprojection_proj_eigenvec }
+// Input list .csv file of tissues to analyse
+// [chr10_52955340_55447336, test_all_chunks_merged_norm_chr10_52955340_55447336.bcf.gz, test_all_chunks_merged_norm_chr10_52955340_55447336.bcf.gz.csi]
+ch_bcfs = Channel.fromPath(params.input)
+            .ifEmpty { exit 1, "Input .csv list of input tissues not found at ${params.input}. Is the file path correct?" }
+            .splitCsv(sep: ',',  skip: 1)
+            .filter{bcf -> bcf =~/chr\d+/} //only autosmes are analyzed in Ancestry and Relatedness pipeline.
+            .map { bcf, index -> ['chr'+file(bcf).simpleName.split('_chr').last() , file(bcf), file(index)] }
 
-  Channel.fromPath(params.inputPCsancestryrelated)
-                        .ifEmpty { exit 1, "Input file with Michigan LD data not found at ${params.inputPCsancestryrelated}. Is the file path correct?" }
-                        .set { ch_inputPCsancestryrelated }
+ch_included_samples = Channel.fromPath(params.included_samples)
+            .ifEmpty { exit 1, "Input file with samples and platekeys data not found at ${params.included_samples}. Is the file path correct?" }
 
-  Channel.fromPath(params.inputAncestryAssignmentProbs)
-                        .ifEmpty { exit 1, "Input file with Michigan LD data not found at ${params.inputAncestryAssignmentProbs}. Is the file path correct?" }
-                        .set { ch_inputAncestryAssignmentProbs }
+ch_bcftools_site_metrics_subcols = Channel.fromPath(params.siteqc_results_dir + '/Annotation/*.txt')
+            .ifEmpty { exit 1, "Input annotation txt files not found at ${params.siteqc_results_dir}/Annotation. Is the dir path correct?" }
+            .filter{txt -> txt =~/chr\d+/} //only autosmes are analyzed in Ancestry and Relatedness pipeline.
+            .map { txt -> ['chr'+ txt.simpleName.split('_chr').last() , txt] }
 
-   Channel.fromPath(params.inputProbs200K)
-                        .ifEmpty { exit 1, "Input file with Ancestry assignments of 200K data not found at ${params.inputinputProbs200K}. Is the file path correct?" }
-                        .set { ch_inputinputProbs200K }
+ch_super_pop_codes = Channel.fromPath(params.super_pop_codes)
+            .ifEmpty { exit 1, "Input file with superpopulation codes was not found at ${params.super_pop_codes}. Is the file path correct?" }
 
-  Channel.fromPath(params.inputMichiganLDfileExclude)
-                        .ifEmpty { exit 1, "Input file with Michigan LD for excluding regions  not found at ${params.inputMichiganLDfile}. Is the file path correct?" }
-                        .set { ch_inputMichiganLDfileExclude }
-if (params.input.endsWith(".csv")) {
+ch_michigan_ld_file = Channel.fromPath(params.michigan_ld_file)
+            .ifEmpty { exit 1, "Input file with Michigan LD for excluding regions  not found at ${params.michigan_ld_file}. Is the file path correct?" }
 
-  Channel.fromPath(params.input)
-                        .ifEmpty { exit 1, "Input .csv list of input tissues not found at ${params.input}. Is the file path correct?" }
-                        .splitCsv(sep: ',',  skip: 1)
-                        .map { bcf, index -> ['chr'+file(bcf).simpleName.split('_chr').last() , file(bcf), file(index)] }
-                        .filter{bcf -> bcf =~/chr\d+/}
-                        // Filter out chunks from chrX, chrY and chrM - they should not be analysed in Ancestry and Relatedness pipeline
-                        .filter { it[0] =~ /chr[^XYM]/ }
-                        .set { ch_bcfs }
+ch_ancestry_probs = Channel.fromPath(params.ancestry_probs)
+            .ifEmpty { exit 1, "Input file with ancestry assignment probabilities not found at ${params.ancestry_probs}. Is the file path correct?" }
 
-}
+ch_pcs_ancestry = Channel.fromPath(params.pcs_ancestry)
+            .ifEmpty { exit 1, "Input file with ancestry Principal Components not found at ${params.pcs_ancestry}. Is the file path correct?" }
 
 
-// Plink files for mend_err_p* processes
+ch_unrelated_1kgp3 = Channel.fromPath(params.unrelated_1kgp3)
+ch_samplelist_1kgp3 = Channel.fromPath(params.samplelist_1kgp3)
+ch_example_eigenvec = Channel.fromPath(params.example_eigenvec)
+ch_example_proj_eigenvec = Channel.fromPath(params.example_proj_eigenvec)
+
 
 
 // Header log info
@@ -163,6 +161,13 @@ if (workflow.revision) summary['Pipeline Release'] = workflow.revision
 // TODO nf-core: Report custom parameters here
 summary['Max Resources']    = "$params.max_memory memory, $params.max_cpus cpus, $params.max_time time per job"
 if (workflow.containerEngine) summary['Container'] = "$workflow.containerEngine - $workflow.container"
+summary['Input bcf list']   = params.input
+summary['Included samples'] = params.included_samples
+summary['Siteqc results dir']=params.siteqc_results_dir
+summary['Michigan LD file'] = params.michigan_ld_file
+summary['Ancestry probs']   = params.ancestry_probs
+summary['PCs ancestry']     = params.pcs_ancestry
+summary['Super pop codes']  = params.super_pop_codes
 summary['Output dir']       = params.outdir
 summary['Launch dir']       = workflow.launchDir
 summary['Working dir']      = workflow.workDir
@@ -191,14 +196,12 @@ process sort_compress {
     publishDir "${params.outdir}/bcftools_site_metrics_subcols/", mode: params.publish_dir_mode
 
     input:
-    set val(region), file(bcftools_site_metrics_subcols) from ch_bcftools_site_metrics_subcols
-
+    tuple val(region), file(bcftools_site_metrics_subcols) from ch_bcftools_site_metrics_subcols
 
     output:
-    set val(region),file ("BCFtools_site_metrics_SUBCOLS${region}_sorted.txt.gz"), file("BCFtools_site_metrics_SUBCOLS${region}_sorted.txt.gz.tbi") into ch_sort_compress
+    tuple val(region), file("BCFtools_site_metrics_SUBCOLS${region}_sorted.txt.gz"), file("BCFtools_site_metrics_SUBCOLS${region}_sorted.txt.gz.tbi") into ch_sort_compress
 
     script:
-
     """
     sort -k2 -n ${bcftools_site_metrics_subcols} > BCFtools_site_metrics_SUBCOLS${region}_sorted.txt
     bgzip -f BCFtools_site_metrics_SUBCOLS${region}_sorted.txt && \
@@ -210,23 +213,28 @@ process sort_compress {
 /* STEP_18
  * STEP - filter_regions: Produce BCFs of our data filtered to sites pass sites
  */
+
+// Bcf and metrics channels are joined by region value, that carries exact identity of the bcf file and
+// its metrics file, to ensure bcf files are filtered by correct metrics. Joining is done by first element
+// in each tuple that carries the region value.
+ch_bcf_and_metrics_joined =
+    ch_bcfs.join(ch_sort_compress)
+
 process filter_regions {
-    publishDir "${params.outdir}/regionsFiltered/", mode: params.publish_dir_mode
+    publishDir "${params.outdir}/regions_filtered/", mode: params.publish_dir_mode
 
     input:
-    set val(region), file(bcf), file(index) from ch_bcfs
-    set val(region2),file ("BCFtools_site_metrics_SUBCOLS${region}_sorted.txt.gz"), file("BCFtools_site_metrics_SUBCOLS${region}_sorted.txt.gz.tbi") from ch_sort_compress
-
+    tuple val(region), file(bcf), file(index), file(site_metrics_file), file(site_metrics_file_index) from ch_bcf_and_metrics_joined
 
     output:
-    set val(region), file ("${region}_regionsFiltered.bcf") into ch_regions_filtered
+    tuple val(region), file("${region}_regions_filtered.bcf") into ch_regions_filtered
 
     script:
     """
     bcftools view ${bcf} \
-    -T BCFtools_site_metrics_SUBCOLS${region}_sorted.txt.gz  \
+    -T ${site_metrics_file}  \
     -Ob \
-    -o ${region}_regionsFiltered.bcf
+    -o ${region}_regions_filtered.bcf
     """
 }
 
@@ -235,10 +243,10 @@ process further_filtering {
     publishDir "${params.outdir}/further_filtering/", mode: params.publish_dir_mode
 
     input:
-    set val(region), file(bcf_filtered) from ch_regions_filtered
+    tuple val(region), file(bcf_filtered) from ch_regions_filtered
 
     output:
-    set val(region), file("MichiganLD_regionsFiltered_${region}.bcf"), file("MAF_filtered_1kp3intersect_${region}.txt") into ch_further_filtering
+    tuple val(region), file("MichiganLD_regions_filtered_${region}.bcf"), file("MAF_filtered_1kp3intersect_${region}.txt") into ch_further_filtering
 
     script:
     """
@@ -248,10 +256,10 @@ process further_filtering {
     bcftools annotate \
     --set-id '%CHROM:%POS-%REF/%ALT-%INFO/OLD_CLUMPED-%INFO/OLD_MULTIALLELIC' | \
     bcftools +fill-tags -Ob \
-    -o MichiganLD_regionsFiltered_${region}.bcf \
+    -o MichiganLD_regions_filtered_${region}.bcf \
     -- -t MAF
     #Produce filtered txt file
-    bcftools query MichiganLD_regionsFiltered_${region}.bcf \
+    bcftools query MichiganLD_regions_filtered_${region}.bcf \
     -i 'MAF[0]>0.01' -f '%CHROM\\t%POS\\t%REF\\t%ALT\\t%MAF\\n' | \
     awk -F "\t" '{ if((\$5 == "G" && \$6 == "C") || (\$6 == "G" && \$5 == "C") || (\$5 == "A" && \$6 == "T") || (\$6 == "A" && \$5 == "T")) {next} { print \$0} }' \
     > MAF_filtered_1kp3intersect_${region}.txt
@@ -265,13 +273,12 @@ process create_final_king_vcf {
     publishDir "${params.outdir}/create_final_king_vcf/", mode: params.publish_dir_mode
 
     input:
-    set val(region), file("MichiganLD_regionsFiltered_${region}.bcf"), file("MAF_filtered_1kp3intersect_${region}.txt") from ch_further_filtering
-    file agg_samples_txt from ch_inputFinalPlatekeys
+    tuple val(region), file(filtered_bcf), file(maf_filtered_variants) from ch_further_filtering
+    each file(agg_samples_txt) from ch_included_samples
 
     output:
-    set val(region), file("${region}_filtered.vcf.gz"), file("${region}_filtered.vcf.gz.tbi") into ch_create_final_king_vcf
-    file "${region}_filtered.vcf.gz" into ch_vcfs_create_final_king_vcf
-    file "${region}_filtered.vcf.gz.tbi" into ch_tbi_create_final_king_vcf
+    tuple val(region), file("${region}_filtered.vcf.gz"), file("${region}_filtered.vcf.gz.tbi") into ch_create_final_king_vcf
+
     script:
     """
     #Now filter down our file to just samples we want in our GRM. This removes any withdrawals that we learned of during the process of aggregation
@@ -279,16 +286,16 @@ process create_final_king_vcf {
     bcftools view \
     -S ${agg_samples_txt} \
     --force-samples \
-    -h MichiganLD_regionsFiltered_${region}.bcf \
+    -h ${filtered_bcf} \
     > ${region}_filtered.vcf
 
     #Then match against all variant cols in our subsetted bcf to our maf filtered, intersected sites and only print those that are in the variant file.
     #Then append this to the stored header, SNPRelate needs vcfs so leave as is
     bcftools view \
-    -H MichiganLD_regionsFiltered_${region}.bcf \
+    -H ${filtered_bcf} \
     -S ${agg_samples_txt} \
     --force-samples \
-    | awk -F '\t' '${awk_expr_create_final_king_vcf_1}' MAF_filtered_1kp3intersect_${region}.txt - >> ${region}_filtered.vcf
+    | awk -F '\t' '${awk_expr_create_final_king_vcf_1}' ${maf_filtered_variants} - >> ${region}_filtered.vcf
     bgzip ${region}_filtered.vcf
     tabix ${region}_filtered.vcf.gz
     """
@@ -298,27 +305,34 @@ process create_final_king_vcf {
  * STEP - concat_king_vcf: Concatenate compressed vcfs to per chromosome files
  */
 
-chrs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
+// For concatenation we need vcf files to be grouped by chromosome.
+ch_vcfs_groupped_by_chr =
+    ch_create_final_king_vcf
+        // Change region name to only contain chromosome number.
+        .map{ region, vcf, index -> [region.split("_")[0].replace("chr",""), vcf, index] }
+        // Group the tuples by chromosome number (by default the first element).
+        .groupTuple()
+        // The resulting channel has tuples of files coming from same chromome and should look as following:
+        // [10, [chr10_10000_20000_filtered.vcf.gz, chr10_20001_30000_filtered.vcf.gz], [chr10_10000_20000_filtered.vcf.gz.tbi, chr10_20001_30000_filtered.vcf.gz.tbi]]
+        // [22, [chr22_10000_20000_filtered.vcf.gz, chr22_20001_30000_filtered.vcf.gz], [chr22_10000_20000_filtered.vcf.gz.tbi, chr22_20001_30000_filtered.vcf.gz.tbi]]
+
+
 process concat_king_vcf {
     publishDir "${params.outdir}/concat_king_vcf/", mode: params.publish_dir_mode
 
     input:
-    set val(region), file("${region}_filtered.vcf.gz"), file("${region}_filtered.vcf.gz.tbi") from ch_create_final_king_vcf
-    file "*.vcf.gz" from ch_vcfs_create_final_king_vcf.collect()
-    file "*.tbi" from ch_tbi_create_final_king_vcf.collect()
-    each chr from chrs
+    tuple val(chr), file(vcf_files), file(vcf_file_indexes) from ch_vcfs_groupped_by_chr
+
     output:
-    set val(chr),file("chrom${chr}_merged_filtered.vcf.gz"),file("chrom${chr}_merged_filtered.vcf.gz.tbi") into ch_vcfs_per_chromosome
+    tuple val(chr), file("chrom${chr}_merged_filtered.vcf.gz"), file("chrom${chr}_merged_filtered.vcf.gz.tbi") into ch_vcfs_per_chromosome
 
     script:
     """
-    find -L . -type f -name chr${chr}_*.vcf.gz > tmp.files_chrom${chr}.txt
-    bcftools concat \
-    -f tmp.files_chrom${chr}.txt \
+    bcftools concat ${vcf_files} \
     -Oz \
     -o chrom${chr}_merged_filtered.vcf.gz && \
-    tabix chrom${chr}_merged_filtered.vcf.gz && \
-    rm tmp.files_chrom${chr}.txt
+
+    tabix chrom${chr}_merged_filtered.vcf.gz
     """
 }
 
@@ -330,27 +344,28 @@ process make_bed_all {
     publishDir "${params.outdir}/make_bed_all/", mode: params.publish_dir_mode
 
     input:
-    set val(chr),file("chrom${chr}_merged_filtered.vcf.gz"),file("chrom${chr}_merged_filtered.vcf.gz.tbi") from ch_vcfs_per_chromosome
-    file(michiganld_exclude_regions_file) from ch_inputMichiganLDfileExclude
+    tuple val(chr), file(vcf), file(index) from ch_vcfs_per_chromosome
+    each file(michiganld_exclude_regions_file) from ch_michigan_ld_file
+
     output:
-    set val(chr),file("BED_${chr}.bed"),file("BED_${chr}.bim"),file("BED_${chr}.fam") into ch_make_bed_all
+    tuple val(chr), file("BED_${chr}.bed"), file("BED_${chr}.bim"), file("BED_${chr}.fam") into ch_make_bed_all
 
     script:
-
     """
-    stringQuery='#-\$r/\$a-.-.'
-    plink2 --vcf chrom${chr}_merged_filtered.vcf.gz \
+    string_query='#-\$r/\$a-.-.'
+    plink2 --vcf ${vcf} \
     --make-bed \
     --vcf-half-call m \
-    --set-missing-var-ids chr@:\$stringQuery \
+    --set-missing-var-ids chr@:\$string_query \
     --new-id-max-allele-len 60 missing \
     --exclude range ${michiganld_exclude_regions_file} \
     --double-id \
     --real-ref-alleles \
     --allow-extra-chr \
-    --threads 30 \
+    --threads ${task.cpus} \
     --out BED_${chr}
     """
+
 }
 /* STEP_23
  * STEP - ld_bed: LD prune SNPs
@@ -360,31 +375,32 @@ process make_bed_all {
     publishDir "${params.outdir}/ld_bed/", mode: params.publish_dir_mode
 
     input:
-    set val(chr),file("BED_${chr}.bed"),file("BED_${chr}.bim"),file("BED_${chr}.fam") from ch_make_bed_all
+    tuple val(chr), file(bed), file(bim), file(fam) from ch_make_bed_all
 
     output:
-    file "BED_LDpruned_${chr}*" into ch_ld_bed
+    file("BED_LDpruned_${chr}*") into ch_ld_bed
 
     script:
+    plink_base = bed.baseName
     """
     #Not considering founders in this as all of our SNPs are common
     plink  \
     --keep-allele-order \
-    --bfile BED_${chr} \
+    --bfile ${plink_base} \
     --indep-pairwise 500kb 1 0.1 \
-    --threads 30 \
+    --threads ${task.cpus} \
     --out BED_LD_${chr}
 
     #Now that we have our correct list of SNPs (prune.in), filter the original
     #bed file to just these sites
     plink \
     --make-bed \
-    --bfile BED_${chr} \
+    --bfile ${plink_base} \
     --keep-allele-order \
     --extract BED_LD_${chr}.prune.in \
     --double-id \
     --allow-extra-chr \
-    --threads 30 \
+    --threads ${task.cpus} \
     --out BED_LDpruned_${chr}
     """
 }
@@ -397,17 +413,21 @@ process merge_autosomes {
     publishDir "${params.outdir}/merge_autosomes/", mode: params.publish_dir_mode
 
     input:
-    file chr_ld_pruned_bed from ch_ld_bed.collect()
+    file(bed_ld_files) from ch_ld_bed.collect()
 
     output:
-    set file("autosomes_LD_pruned_1kgp3Intersect.bed"), file("autosomes_LD_pruned_1kgp3Intersect.bim"), file("autosomes_LD_pruned_1kgp3Intersect.fam"),file("autosomes_LD_pruned_1kgp3Intersect.nosex") into (ch_merge_autosomes , ch_merge_autosomes2, ch_merge_autosomes3, ch_merge_autosomes4)
+    tuple file("autosomes_LD_pruned_1kgp3Intersect.bed"),
+          file("autosomes_LD_pruned_1kgp3Intersect.bim"),
+          file("autosomes_LD_pruned_1kgp3Intersect.fam"),
+          file("autosomes_LD_pruned_1kgp3Intersect.nosex") into (ch_merged_autosomes_hwe_pruning_30k_snps,
+                                                                 ch_merged_autosomes_king_coefficients)
 
     script:
     """
     for i in {1..22}; do if [ -f "BED_LDpruned_\$i.bed" ]; then echo BED_LDpruned_\$i >> mergelist.txt; fi ;done
     plink --merge-list mergelist.txt \
     --make-bed \
-    --out autosomes_LD_pruned_1kgp3Intersect
+    --out "autosomes_LD_pruned_1kgp3Intersect"
     rm mergelist.txt
     """
 }
@@ -417,90 +437,86 @@ process merge_autosomes {
  */
 process hwe_pruning_30k_snps {
     publishDir "${params.outdir}/hwe_pruning_30k_snps/", mode: params.publish_dir_mode
+
     input:
-    set file("autosomes_LD_pruned_1kgp3Intersect.bed"), file("autosomes_LD_pruned_1kgp3Intersect.bim"), file("autosomes_LD_pruned_1kgp3Intersect.fam"),file("autosomes_LD_pruned_1kgp3Intersect.nosex") from ch_merge_autosomes
-    file (ancestry_assignment_probs) from ch_inputAncestryAssignmentProbs
-    file (pc_sancestry_related) from ch_inputPCsancestryrelated
+    tuple file(bed), file(bim), file(fam), file(nosex) from ch_merged_autosomes_hwe_pruning_30k_snps
+    file(ancestry_probs) from ch_ancestry_probs
+    file(pc_sancestry_related) from ch_pcs_ancestry
 
     output:
-    file "hwe1e-5_superpops_195ksnps" into hwe_pruning_30k_snps
+    file("hwe1e-5_superpops_195ksnps") into ch_hwe_pruning_30k_snps
 
     script:
+    plink_base = bed.baseName
     """
-    R -e 'library(data.table);
-    library(dplyr);
-    dat <- fread("${ancestry_assignment_probs}") %>% as_tibble();
-    unrels <- fread("${pc_sancestry_related}") %>% as_tibble() %>% filter(unrelated_set == 1);
-    dat <- dat %>% filter(plate_key %in% unrels\$plate_key);
-    for(col in c("AFR","EUR","SAS","EAS")){dat[dat[col]>0.8,c("plate_key",col)] %>% write.table(paste0(col,"pop.txt"), quote = F, row.names=F)}
-    '
+    hwe_pops.R --ancestry_assignment_probs='${ancestry_probs}' \
+               --pc_sancestry_related='${pc_sancestry_related}'
 
-    bedmain="autosomes_LD_pruned_1kgp3Intersect"
     for pop in AFR EUR SAS EAS; do
         echo \${pop}
-        awk '{print \$1"\t"\$1}' \${pop}pop.txt > \${pop}keep
+        awk '{print \$1"\\t"\$1}' \${pop}pop.txt > \${pop}keep
+
         plink \
         --keep-allele-order \
         --make-bed \
-        --bfile \${bedmain} \
+        --bfile ${plink_base} \
         --out \${pop}
 
         plink --bfile \${pop} --hardy midp --out \${pop} --nonfounders
     done
 
     #Combine the HWE and produce a list of pass
-    R -e 'library(data.table);
-    library(dplyr);
-    dat <- lapply(c("EUR.hwe","AFR.hwe", "SAS.hwe", "EAS.hwe"),fread);
-    names(dat) <- c("EUR.hwe","AFR.hwe", "SAS.hwe", "EAS.hwe");
-    dat <- dat %>% bind_rows(.id="id");
-    write.table(dat, "combinedHWE.txt", row.names = F, quote = F)
-    #Create set that is just SNPS that are >1e-5 in all pops
-    dat %>% filter(P >1e-5) %>% group_by(SNP) %>% count() %>% filter(n==4) %>% select(SNP) %>% distinct() %>%
-    write.table("hwe1e-5_superpops_195ksnps", row.names = F, quote = F)
-    '
+    hwe_produce_pass.R
     """
 }
 
 /* STEP_26
  */
 process king_coefficients{
-       publishDir "${params.outdir}/king_coefficients/", mode: params.publish_dir_mode
+    publishDir "${params.outdir}/king_coefficients/", mode: params.publish_dir_mode
 
+    input:
+    tuple file(bed), file(bim), file(fam), file(nosex) from ch_merged_autosomes_king_coefficients
+    file(significant_superpops_snps) from ch_hwe_pruning_30k_snps
 
+    output:
+    tuple file("${bed.baseName}_unrelated.bed"),
+          file("${bed.baseName}_unrelated.bim"),
+          file("${bed.baseName}_unrelated.fam") into ch_king_coefficients_unrelated
+    tuple file("${bed.baseName}_related.bed"),
+          file("${bed.baseName}_related.bim"),
+          file("${bed.baseName}_related.fam") into ch_king_coefficients_related
+  	file("${bed.baseName}_triangle_HWE1_5.king.cutoff.in.id") into ch_unrelatedlist
 
-       input:
-       set file("autosomes_LD_pruned_1kgp3Intersect.bed"), file("autosomes_LD_pruned_1kgp3Intersect.bim"), file("autosomes_LD_pruned_1kgp3Intersect.fam"),file("autosomes_LD_pruned_1kgp3Intersect.nosex") from ch_merge_autosomes2
-       file "hwe1e-5_superpops_195ksnps" from hwe_pruning_30k_snps
-
-       output:
-       set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bed"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bim"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.fam"), file("autosomes_LD_pruned_1kgp3Intersect_related.bed"),file("autosomes_LD_pruned_1kgp3Intersect_related.bim"), file("autosomes_LD_pruned_1kgp3Intersect_related.fam") into king_coefficients
-  	   file("autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.in.id") into ch_unrelatedlist
-
-       script:
+    script:
+    plink_base = bed.baseName
     """
     plink2 \
-    --bfile autosomes_LD_pruned_1kgp3Intersect \
-    --extract hwe1e-5_superpops_195ksnps \
+    --bfile ${plink_base} \
+    --extract ${significant_superpops_snps} \
     --make-king triangle bin \
-    --out autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1e_5 \
-    --thread-num 30
+    --out "${plink_base}_triangle_HWE1e_5" \
+    --thread-num ${task.cpus}
     echo "done1"
 
-    plink2 --bfile autosomes_LD_pruned_1kgp3Intersect \
-       --king-cutoff autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1e_5 0.0442 && \
-       mv plink2.king.cutoff.in.id  autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.in.id && \
-       mv plink2.king.cutoff.out.id  autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.out.id
+    plink2 \
+    --bfile ${plink_base} \
+    --king-cutoff "${plink_base}_triangle_HWE1e_5" 0.0442 && \
+    mv "plink2.king.cutoff.in.id" "${plink_base}_triangle_HWE1_5.king.cutoff.in.id" && \
+    mv "plink2.king.cutoff.out.id" "${plink_base}_triangle_HWE1_5.king.cutoff.out.id"
 
-    plink2 --bfile autosomes_LD_pruned_1kgp3Intersect \
+    plink2 \
+    --bfile ${plink_base} \
     --make-bed \
-    --keep autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.in.id \
-    --out autosomes_LD_pruned_1kgp3Intersect_unrelated
+    --keep "${plink_base}_triangle_HWE1_5.king.cutoff.in.id" \
+    --out "${plink_base}_unrelated"
     echo "done2"
-    plink2 --bfile autosomes_LD_pruned_1kgp3Intersect \
+
+    plink2 \
+    --bfile ${plink_base} \
     --make-bed \
-    --remove autosomes_LD_pruned_1kgp3Intersect_triangle_HWE1_5.king.cutoff.in.id \
-    --out autosomes_LD_pruned_1kgp3Intersect_related
+    --remove "${plink_base}_triangle_HWE1_5.king.cutoff.in.id" \
+    --out "${plink_base}_related"
     echo "done3"
     """
 }
@@ -510,18 +526,35 @@ process gcta{
     publishDir "${params.outdir}/gcta/", mode: params.publish_dir_mode
 
     input:
-    set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bed"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.bim"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.fam"), file("autosomes_LD_pruned_1kgp3Intersect_related.bed"),file("autosomes_LD_pruned_1kgp3Intersect_related.bim"), file("autosomes_LD_pruned_1kgp3Intersect_related.fam") from king_coefficients
+    tuple file(bed), file(bim), file(fam) from ch_king_coefficients_unrelated
 
     output:
-
-    set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenval") , file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec.PROJ.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.N.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.id") into ch_gcta
+    tuple file("${bed.baseName}.eigenval"),
+          file("${bed.baseName}.eigenvec"),
+          file("${bed.baseName}.eigenvec.PROJ.eigenvec"),
+          file("${bed.baseName}.grm.N.bin"),
+          file("${bed.baseName}.grm.bin"),
+          file("${bed.baseName}.grm.id") into ch_gcta
 
     script:
+    plink_base = bed.baseName
     """
-    gcta64 --bfile "autosomes_LD_pruned_1kgp3Intersect_unrelated" --make-grm-bin --thread-num 30 --out "autosomes_LD_pruned_1kgp3Intersect_unrelated"
-    gcta64 --grm "autosomes_LD_pruned_1kgp3Intersect_unrelated" --pca ${n_pca}  --out "autosomes_LD_pruned_1kgp3Intersect_unrelated" --thread-num 30
-    gcta64 --bfile "autosomes_LD_pruned_1kgp3Intersect_unrelated" --pc-loading "autosomes_LD_pruned_1kgp3Intersect_unrelated" --out "autosomes_LD_pruned_1kgp3Intersect_unrelated" --thread-num 30
-    awk 'BEGIN{OFS="    "}{print \$0, "NA"}' "autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec" > "autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec.PROJ.eigenvec"
+    gcta64 --bfile ${plink_base} \
+    --make-grm-bin \
+    --thread-num ${task.cpus} \
+    --out ${plink_base}
+
+    gcta64 --grm ${plink_base} \
+    --pca ${n_pca} \
+    --out ${plink_base} \
+    --thread-num ${task.cpus}
+
+    gcta64 --bfile ${plink_base} \
+    --pc-loading ${plink_base} \
+    --out ${plink_base} \
+    --thread-num ${task.cpus}
+
+    awk 'BEGIN{OFS="    "}{print \$0, "NA"}' "${plink_base}.eigenvec" > "${plink_base}.eigenvec.PROJ.eigenvec"
     """
 }
 /* STEP_27
@@ -530,16 +563,16 @@ process infer_ancestry{
     publishDir "${params.outdir}/infer_ancestry/", mode: params.publish_dir_mode
 
     input:
-    file (kgp3_sample_table) from ch_input1KGP3
-    file (super_pop_codes) from ch_inputSuper_pop_codes
-    file (kgp3_unrel) from ch_inputUNRELATED_1KGP3
-    file "1KGP3_intersectGEL_200Kset_perpopHWE1e-6_unrel_maf0.05both1K100K.eigenvec" from ch_input05both1K100K_eigenvec
-    file "1KGP3_intersectGEL_200Kset_perpopHWE1e-6_unrel_maf0.05both1K100K_GELprojection.proj.eigenvec" from ch_GELprojection_proj_eigenvec
-    set file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenval") , file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec.PROJ.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.N.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.id") from ch_gcta
+    file(kgp3_sample_table) from ch_samplelist_1kgp3
+    file(super_pop_codes) from ch_super_pop_codes
+    file(kgp3_unrel) from ch_unrelated_1kgp3
+    file(eigenvec) from ch_example_eigenvec
+    file(projections) from ch_example_proj_eigenvec
+    tuple file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenval"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.eigenvec.PROJ.eigenvec"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.N.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.bin"), file("autosomes_LD_pruned_1kgp3Intersect_unrelated.grm.id") from ch_gcta
 
     output:
-    file "predicted_ancestries.tsv" into ch_infer_ancestry
-    file "results.RDS" into ch_infer_ancestry_2
+    file("predicted_ancestries.tsv") into ch_infer_ancestry
+    file("results.RDS") into ch_infer_ancestry_r_data
 
     script:
     """
@@ -548,10 +581,34 @@ process infer_ancestry{
     ${kgp3_sample_table} \
     ${super_pop_codes} \
     ${kgp3_unrel} \
-    "1KGP3_intersectGEL_200Kset_perpopHWE1e-6_unrel_maf0.05both1K100K.eigenvec" \
-    "1KGP3_intersectGEL_200Kset_perpopHWE1e-6_unrel_maf0.05both1K100K_GELprojection.proj.eigenvec" \
+    ${eigenvec} \
+    ${projections} \
     "Ancestries"
     """
+}
+
+/*
+ * Completion notification
+ */
+workflow.onComplete {
+
+    c_green = params.monochrome_logs ? '' : "\033[0;32m";
+    c_purple = params.monochrome_logs ? '' : "\033[0;35m";
+    c_red = params.monochrome_logs ? '' : "\033[0;31m";
+    c_reset = params.monochrome_logs ? '' : "\033[0m";
+
+    if (workflow.stats.ignoredCount > 0 && workflow.success) {
+        log.info "-${c_purple}Warning, pipeline completed, but with errored process(es) ${c_reset}-"
+        log.info "-${c_red}Number of ignored errored process(es) : ${workflow.stats.ignoredCount} ${c_reset}-"
+        log.info "-${c_green}Number of successfully ran process(es) : ${workflow.stats.succeedCount} ${c_reset}-"
+    }
+
+    if (workflow.success) {
+        log.info "-${c_purple}[lifebit-ai/annotate]${c_green} Pipeline completed successfully${c_reset}-"
+    } else {
+        log.info "-${c_purple}[lifebit-ai/annotate]${c_red} Pipeline completed with errors${c_reset}-"
+    }
+
 }
 
 def nfcoreHeader() {
@@ -568,25 +625,4 @@ def nfcoreHeader() {
 
     return """
     """.stripIndent()
-}
-
-def checkHostname() {
-    def c_reset = params.monochrome_logs ? '' : "\033[0m"
-    def c_white = params.monochrome_logs ? '' : "\033[0;37m"
-    def c_red = params.monochrome_logs ? '' : "\033[1;91m"
-    def c_yellow_bold = params.monochrome_logs ? '' : "\033[1;93m"
-    if (params.hostnames) {
-        def hostname = "hostname".execute().text.trim()
-        params.hostnames.each { prof, hnames ->
-            hnames.each { hname ->
-                if (hostname.contains(hname) && !workflow.profile.contains(prof)) {
-                    log.error "====================================================\n" +
-                            "  ${c_red}WARNING!${c_reset} You are running with `-profile $workflow.profile`\n" +
-                            "  but your machine hostname is ${c_white}'$hostname'${c_reset}\n" +
-                            "  ${c_yellow_bold}It's highly recommended that you use `-profile $prof${c_reset}`\n" +
-                            "============================================================"
-                }
-            }
-        }
-    }
 }

@@ -39,7 +39,7 @@ RUN find /opt/bin/ -type f -iname "*.py" -exec chmod +x {} \; && \
     find /opt/bin/ -type f -iname "*.sh" -exec chmod +x {} \; && \
     find /opt/bin/ -type f -iname "*.css" -exec chmod +x {} \; && \
     find /opt/bin/ -type f -iname "*.Rmd" -exec chmod +x {} \;
-    
+
 # Instruct R processes to use these empty files instead of clashing with a local version
 RUN touch .Rprofile
 RUN touch .Renviron
@@ -49,6 +49,17 @@ RUN touch .Renviron
 RUN apt-get update && \
     apt-get install -y \
                    gawk \
-                   tabix
+                   tabix \
+                   procps \
+                   zip \
+    && rm -rf /var/lib/apt/lists/*
+
+
+# Install Plink2
+
+RUN wget http://s3.amazonaws.com/plink2-assets/plink2_linux_x86_64_20201028.zip && \
+    unzip plink2_linux_x86_64_20201028.zip -d plink2 && \
+    rm plink2_linux_x86_64_20201028.zip
+ENV PATH /plink2:$PATH
 
 ENV PATH="$PATH:/opt/bin/"
