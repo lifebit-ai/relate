@@ -1,0 +1,13 @@
+assets
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+conf
+docs
+LICENSE
+main.nf
+nextflow.config
+README.md
+results
+work
+.nextflow*
+.git*
