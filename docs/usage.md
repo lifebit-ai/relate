@@ -12,7 +12,7 @@ The typical command for running the pipeline is as follows:
 nextflow run lifebit-ai/relate --input ..
 ```
 
-This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
+This will launch the pipeline with the `standard` configuration profile. See below for more information about profiles.
 
 Note that the pipeline will create the following files in your working directory:
 
@@ -39,7 +39,7 @@ First, go to the [nf-core/relate releases page](https://github.com/nf-core/relat
 
 This version number will be logged in reports when you run the pipeline, so that you'll know what you used when you look back in the future.
 
-## Required relate pipeline arguments
+## Required pipeline arguments
 ### `--input`
 File with list of full paths to bcf files and their indexes. Bcf files can be compressed but in a readable for bcftools format.
 
@@ -52,14 +52,31 @@ Example file content:
 bcf,index
 s3://lifebit-featured-datasets/projects/gel/siteqc/test_all_chunks_merged_norm_chr10_52955340_55447336.bcf.gz,s3://lifebit-featured-datasets/projects/gel/siteqc/test_all_chunks_merged_norm_chr10_52955340_55447336.bcf.gz.csi
 ```
-### `--inputDir`
-Input dir for annotation ".txt" files for each of the regions (or chunks ), comming from the metrics compoment and first aggregate annotation of SiteQC pipeline. 
+### `--included_samples`
+File with a list of participant IDs to be included in the analysis. Required for "create_final_king_vcf" process.
 
 Example argument:
 ```
---inputDir s3://lifebit-featured-datasets/projects/gel/siteqc/ARtestFiles/Annotation_newtest/
+--included_samples s3://lifebit-featured-datasets/projects/gel/siteqc/sampleList.txt
 ```
-Example file content of txt files inside directory:
+Example file content:
+```
+HG002
+sample_1
+sample_2
+sample_3
+HG003
+HG004
+```
+
+### `--siteqc_results_dir`
+Path to results folder of SiteQC pipeline that has QC metrics and annotation for the same bcf/vcf genotypic files as used `--input` parameter of Ancestry and relatedness pipeline. Only final siteqc annotation files from sub-folder "Annotate" will be used in this pipeline.
+
+Example argument:
+```
+--siteqc_results_dir s3://lifebit-featured-datasets/projects/gel/siteqc/ARtestFiles/siteqc_example_res
+```
+Example file content of txt files inside `siteqc_example_res/Annotate` directory:
 ```
 chr10	52955340	A	G	PASS
 chr10	52955649	T	C	PASS
@@ -77,12 +94,12 @@ chr10	52957321	C	T	PASS
 chr10	52957381	A	G	PASS
 chr10	52957427	G	T	PASS
 ```
-### `--inputMichiganLDfileExclude`
+### `--michigan_ld_file`
 File with regions to be filtered out for improving quality of sites selected.
 
 Example argument:
 ```
---inputMichiganLDfileExclude s3://lifebit-featured-datasets/projects/gel/siteqc/MichiganLD_liftover_exclude_regions_PARSED.txt 
+--michigan_ld_file s3://lifebit-featured-datasets/projects/gel/siteqc/MichiganLD_liftover_exclude_regions_PARSED.txt 
 ```
 Example file content:
 ```
@@ -103,12 +120,27 @@ chr12 109062195 111562196 1
 chr20 33412194 35912078 1
 ```
 
-### `--inputPCsancestryrelated`
-File with Principal Components information comming from reference resources of GEL for the inferred ancestries from the 30k dataset.
+### `--ancestry_probs`
+File required for hwe_pruning_30k_snps process containing tab separated values for probabilities of assignments for the 31 populations code for each participant.
 
 Example argument:
 ```
---inputPCsancestryrelated s3://lifebit-featured-datasets/projects/gel/siteqc/aggV2_bedmerge_30KSNPs_labkeyV9_08062020_update_PCsancestryrelated.tsv
+--ancestry_probs s3://lifebit-featured-datasets/projects/gel/siteqc/aggV2_bedmerge_30KSNPs_labkeyV9_08062020_update_PCsancestryrelated.tsv
+```
+Example file content:
+```
+plate_key AFR SAS EAS EUR AMR ACB ASW BEB CDX CEU CHB CHS CLM ESN FIN GBR GIH GWD IBS ITU JPT KHV LWK MSL MXL PEL PJL PUR STU TSI YRI
+HG002 0 0 0 0.89 0.01 1 0 0 0 0.01 0 0 0 0 0 0.21 0 0 0.01 0 0 0 0 0 0 0 0 0 0 0.01 0
+HG003 0 0 0 0.01 0.99 0 0 0 0 0.01 0 0 0 0 0 0.24 0 0 0 0 0 0 0 0 0 0 0 0 0 0.01 0
+HG004 0 0 0 1 0 0 0 0 0 0.35 0 0 0 0 0 0.41 0 0 0.03 0 0 0 0 0 0 0 0 0 0 0.16 0
+```
+
+### `--pcs_ancestry`
+File with Principal Components information comming from reference resources of GEL, for example for the inferred ancestries from the 30k dataset.
+
+Example argument:
+```
+--pcs_ancestry s3://lifebit-featured-datasets/projects/gel/siteqc/aggV2_bedmerge_30KSNPs_labkeyV9_08062020_update_PCsancestryrelated.tsv
 ```
 Example file content:
 ```
@@ -118,46 +150,15 @@ HG003 -0.00181639 -0.000681688 -0.00173264 -0.000721908 -0.0004302 -0.000634145 
 HG004 -0.00180975 -0.00269357 -0.00153047 -0.00223267 0.00132476 -0.000542491 -0.0008464999 -0.00379903 -0.0001633 0.00455183 0 0 0 1 0 0
 ```
 
+## Example files temporarily required:
+While the pipeline example data is not fully developed, use these files to run and test final infer_ancestry step of the pipeline. (To be changed soon)
 
-### `--inputFinalPlatekeys`
-File with a list of platekeys to be included in the analysis , required for "create_final_king_vcf" process.
-
-Example argument:
-```
---inputFinalPlatekeys s3://lifebit-featured-datasets/projects/gel/siteqc/sampleList.txt
-```
-Example file content:
-```
-HG002
-sample_1
-sample_2
-sample_3
-HG003
-HG004
-```
-
-
-### `--inputProbs200K`
-File with Ancestry assignments from GEL's reference resources.
-
-Example argument:
-```
---inputProbs200K s3://lifebit-featured-datasets/projects/gel/siteqc/aggV2_ancestry_assignment_probs_1KGP3_200K.tsv
-```
-Example file content:
-```
-Sample AFR SAS EAS EUR AMR ACB ASW BEB CDX CEU CHB CHS CLM ESN FIN GBR GIH GWD IBS ITU JPT KHV LWK MSL MXL PEL PJL PUR STU TSI YRI
-HG002 0 0 0 0.89 0.01 1 0 0 0 0.01 0 0 0 0 0 0.21 0 0 0.01 0 0 0 0 0 0 0 0 0 0 0.01 0
-HG003 0 0 0 0.01 0.99 0 0 0 0 0.01 0 0 0 0 0 0.24 0 0 0 0 0 0 0 0 0 0 0 0 0 0.01 0
-HG004 0 0 0 1 0 0 0 0 0 0.35 0 0 0 0 0 0.41 0 0 0.03 0 0 0 0 0 0 0 0 0 0 0.16 0
-```
-
-### `--inputUNRELATED_1KGP3`
+### `--unrelated_1kgp3`
 File required for the infer_ancestry process , is a two column tab separated file with platekeys on each column.
 
 Example argument:
 ```
---inputUNRELATED_1KGP3 s3://lifebit-featured-datasets/projects/gel/siteqc/UNRELATED_1KGP3.samples
+--unrelated_1kgp3 s3://lifebit-featured-datasets/projects/gel/siteqc/UNRELATED_1KGP3.samples
 ```
 Example file content:
 ```
@@ -177,12 +178,12 @@ HG00110	HG00110
 HG00111	HG00111
 ```
 
-### `--input1KGP3`
-File required for the infer_ancestry process , is a three column tab separated file with Sample(Platekey), Family ID and Population asignments.
+### `--samplelist_1kgp3`
+File required for the infer_ancestry process, is a three column tab separated file with Sample(Platekey), Family ID and Population asignments.
 
 Example argument:
 ```
---input1KGP3 s3://lifebit-featured-datasets/projects/gel/siteqc/1KGP3.sample_table
+--samplelist_1kgp3 s3://lifebit-featured-datasets/projects/gel/siteqc/1KGP3.sample_table
 ```
 Example file content:
 ```
@@ -196,8 +197,37 @@ HG00101	HG00101	GBR
 HG00102	HG00102	GBR
 ```
 
+### `--example_eigenvec`
+File required for the infer_ancestry process, its tab separated file with eigenvectors.
+
+Example argument:
+```
+`--example_eigenvec s3://lifebit-featured-datasets/projects/gel/siteqc/1KGP3_30K_unrel_autosomes.eigenvec
+```
+Example file content:
+```
+HG00096 HG00096 -0.0324126 0.000243448 0.00664191 -0.0131188 0.00715375 0.0153836 0.0457208 -0.0213814 0.0183829 -0.0217617 -0.0241451 0.0562236 -0.0437782 0.00829286 0.0866145 -0.0442724 -0.0484038 0.0465044 0.0462053 -0.0131035
+HG00097 HG00097 -0.0316075 0.00138343 0.00602363 -0.0169859 0.00928749 -0.00330704 0.052626 -0.0140852 0.0236413 0.00480714 -0.0178737 0.0187442 -0.0834035 -0.000704524 -0.00238823 -0.0899047 0.00142339 0.0164213 0.0256184 -0.0573523
+HG00099 HG00099 -0.0320885 -0.000516738 0.0103002 -0.0112502 0.0195807 0.00096675 0.0772091 -0.0222773 0.0188928 0.0118046 0.0155667 -0.0125489 -0.0275191 -2.1464e-05 0.0182104 -0.0459963 -0.0136182 -0.0236272 0.0540468 0.0127228
+```
+### `--example_proj_eigenvec`
+File required for the infer_ancestry process, its tab separated file with eigenvectors and it has "NA" values in the last column.
+
+Example argument:
+```
+--example_proj_eigenvec s3://lifebit-featured-datasets/projects/gel/siteqc/1KGP3_30K_unrel_autosomes.eigenvec_TMPPROJ
+```
+Example file content:
+```
+HG00096 HG00096 -0.0324126 0.000243448 0.00664191 -0.0131188 0.00715375 0.0153836 0.0457208 -0.0213814 0.0183829 -0.0217617 -0.0241451 0.0562236 -0.0437782 0.00829286 0.0866145 -0.0442724 -0.0484038 0.0465044 0.0462053 -0.0131035 NA
+HG00097 HG00097 -0.0316075 0.00138343 0.00602363 -0.0169859 0.00928749 -0.00330704 0.052626 -0.0140852 0.0236413 0.00480714 -0.0178737 0.0187442 -0.0834035 -0.000704524 -0.00238823 -0.0899047 0.00142339 0.0164213 0.0256184 -0.0573523 NA
+```
+
+## Optional parameters and inputs
+
 ### `--inputSuper_pop_codes`
 File required for the infer_ancestry process, its tab separated file with population and super population relations and related information.
+The file below is used by default, but can be changed to a custom file.
 
 Example argument:
 ```
@@ -213,32 +243,15 @@ CDX	Chinese Dai in Xishuangbanna, China	EAS
 KHV	Kinh in Ho Chi Minh City, Vietnam	EAS
 CEU	Utah Residents (CEPH) with Northern and Western European Ancestry	EUR
 ```
-
-### `--input05both1K100K_eigenvec`
-File required for the infer_ancestry process, its tab separated file with eigenvectors.
-
-Example argument:
-```
-`--input05both1K100K_eigenvec s3://lifebit-featured-datasets/projects/gel/siteqc/1KGP3_30K_unrel_autosomes.eigenvec
-```
-Example file content:
-```
-HG00096 HG00096 -0.0324126 0.000243448 0.00664191 -0.0131188 0.00715375 0.0153836 0.0457208 -0.0213814 0.0183829 -0.0217617 -0.0241451 0.0562236 -0.0437782 0.00829286 0.0866145 -0.0442724 -0.0484038 0.0465044 0.0462053 -0.0131035
-HG00097 HG00097 -0.0316075 0.00138343 0.00602363 -0.0169859 0.00928749 -0.00330704 0.052626 -0.0140852 0.0236413 0.00480714 -0.0178737 0.0187442 -0.0834035 -0.000704524 -0.00238823 -0.0899047 0.00142339 0.0164213 0.0256184 -0.0573523
-HG00099 HG00099 -0.0320885 -0.000516738 0.0103002 -0.0112502 0.0195807 0.00096675 0.0772091 -0.0222773 0.0188928 0.0118046 0.0155667 -0.0125489 -0.0275191 -2.1464e-05 0.0182104 -0.0459963 -0.0136182 -0.0236272 0.0540468 0.0127228
-```
-### `--inputGELprojection_proj_eigenvec`
-File required for the infer_ancestry process, its tab separated file with eigenvectors and it has "NA" values in the last column.
+### `--n_pca`
+Number of Principal Components desired for gcta process. (Default: 20)
 
 Example argument:
 ```
---inputGELprojection_proj_eigenvec s3://lifebit-featured-datasets/projects/gel/siteqc/1KGP3_30K_unrel_autosomes.eigenvec_TMPPROJ
+--n_pca 20
 ```
-Example file content:
-```
-HG00096 HG00096 -0.0324126 0.000243448 0.00664191 -0.0131188 0.00715375 0.0153836 0.0457208 -0.0213814 0.0183829 -0.0217617 -0.0241451 0.0562236 -0.0437782 0.00829286 0.0866145 -0.0442724 -0.0484038 0.0465044 0.0462053 -0.0131035 NA
-HG00097 HG00097 -0.0316075 0.00138343 0.00602363 -0.0169859 0.00928749 -0.00330704 0.052626 -0.0140852 0.0236413 0.00480714 -0.0178737 0.0187442 -0.0834035 -0.000704524 -0.00238823 -0.0899047 0.00142339 0.0164213 0.0256184 -0.0573523 NA
-```
+
+
 ## Core Nextflow arguments
 
 > **NB:** These options are part of Nextflow and use a _single_ hyphen (pipeline parameters use a double-hyphen).
@@ -247,30 +260,22 @@ HG00097 HG00097 -0.0316075 0.00138343 0.00602363 -0.0169859 0.00928749 -0.003307
 
 Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments.
 
-Several generic profiles are bundled with the pipeline which instruct the pipeline to use software packaged using different methods (Docker, Singularity, Conda) - see below.
-
 > We highly recommend the use of Docker or Singularity containers for full pipeline reproducibility, however when this is not possible, Conda is also supported.
-
-The pipeline also dynamically loads configurations from [https://github.com/nf-core/configs](https://github.com/nf-core/configs) when it runs, making multiple config profiles for various institutional clusters available at run time. For more information and to see if your system is available in these configs please see the [nf-core/configs documentation](https://github.com/nf-core/configs#documentation).
+All processes of Ancestry and Relatedness pipeline use Docker container (`lifebitai/relate:latest`)[https://hub.docker.com/r/lifebitai/relate/tags].
 
 Note that multiple profiles can be loaded, for example: `-profile test,docker` - the order of arguments is important!
 They are loaded in sequence, so later profiles can overwrite earlier profiles.
 
-If `-profile` is not specified, the pipeline will run locally and expect all software to be installed and available on the `PATH`. This is _not_ recommended.
+* `standard`
+  * The main configuration profile (used by default)
+  * Contains preset default parameters, but not required parameters
+  * Pulls software from Docker Hub: [`lifebitai/relate`](https://hub.docker.com/r/lifebitai/relate/)
 
-* `docker`
-  * A generic configuration profile to be used with [Docker](https://docker.com/)
-  * Pulls software from Docker Hub: [`nfcore/relate`](https://hub.docker.com/r/nfcore/relate/)
-* `singularity`
-  * A generic configuration profile to be used with [Singularity](https://sylabs.io/docs/)
-  * Pulls software from Docker Hub: [`nfcore/relate`](https://hub.docker.com/r/nfcore/relate/)
-* `conda`
-  * Please only use Conda as a last resort i.e. when it's not possible to run the pipeline with Docker or Singularity.
-  * A generic configuration profile to be used with [Conda](https://conda.io/docs/)
-  * Pulls most software from [Bioconda](https://bioconda.github.io/)
 * `test`
   * A profile with a complete configuration for automated testing
   * Includes links to test data so needs no other parameters
+
+Note: If `-profile` is not specified, the pipeline will run using default profile `standard`, which is the intended way of running the pipeline.
 
 ### `-resume`
 
