@@ -51,11 +51,3 @@ dat %>%
     select(SNP)     %>%
     distinct()      %>%
     write.table("hwe1e-5_superpops_195ksnps", row.names = F, quote = F)
-
-#dat <- lapply(c("EUR.hwe","AFR.hwe", "SAS.hwe", "EAS.hwe"),fread);
-#    names(dat) <- c("EUR.hwe","AFR.hwe", "SAS.hwe", "EAS.hwe");
-#    dat <- dat %>% bind_rows(.id="id");
-#    write.table(dat, "combinedHWE.txt", row.names = F, quote = F)
-    #Create set that is just SNPS that are >1e-5 in all pops
-#    dat %>% filter(P >1e-5) %>% group_by(SNP) %>% count() %>% filter(n==4) %>% select(SNP) %>% distinct() %>%
-#    write.table("hwe1e-5_superpops_195ksnps", row.names = F, quote = F)
