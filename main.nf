@@ -449,7 +449,7 @@ process hwe_pruning_30k_snps {
     script:
     plink_base = bed.baseName
     """
-    hwe_pops.R --ancestry_probs='${ancestry_probs}' \
+    hwe_pops.R --ancestry_assignment_probs='${ancestry_probs}' \
                --pc_sancestry_related='${pc_sancestry_related}'
 
     for pop in AFR EUR SAS EAS; do
